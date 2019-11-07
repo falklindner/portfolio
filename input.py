@@ -20,9 +20,6 @@ dkb = pd.read_csv("dkb_sg.csv",
     thousands=".",
     names = ["Execute","Booking","Amount","Name","WKN","Currency","Price","Trans","Portfolio"]
 )
-dkb
-
-
 amount = pd.read_csv("ums.csv",
     skiprows = 4,
     delimiter = ";",
@@ -32,7 +29,6 @@ amount = pd.read_csv("ums.csv",
     names = ["Amount"], 
     header = None
 )
-
 parsed = pd.read_csv("ums.csv",
     skiprows = 4,
     delimiter = ";",
@@ -49,6 +45,9 @@ parsed = pd.read_csv("ums.csv",
 
 input_form = pd.concat([parsed,amount], axis = 1)
 input_form = input_form.assign(Portfolio="Altersvorsorge")
+cumulation = pd.concat([input_form,dkb],ignore_index = True)
+
+cumulation.WKN.unique()
 
 input_form["Fees"] = round(input_form["Trans"]-(input_form["Amount"]*input_form["Price"]),2)
 input_form
@@ -63,13 +62,29 @@ class Stock:
         self.wkn = WKN
         self.gsymbol = GoogleSymbol
         self.ysymbol = YahooSymbol
-        
+        self.own = 0
+    def mod(amount):
+        own = own + amount
+
+
 
 msci_world_it_lyxor = Stock("LYX0GP", "FRA:LYPG", "LYPG.DE")
 msci_world_lyxor = Stock("LYX0AG", "FRA:LYYA","LYYA.DE")
 msci_world_comstage = Stock("ETF110", "FRA:X010", "X010.DE")
 msci_world_amundi = Stock("A2H59Q", "FRA:AMEW", "AMEW.DE")
-msci_world_it_xtrackers ("A113FM", "FRA:XDWT", "XDWT.DE")
-airbus ("AIR.PA", "ETR:AIR", "AIR.PA")
+msci_world_it_xtrackers = ("A113FM", "FRA:XDWT", "XDWT.DE")
+airbus = ("AIR.PA", "ETR:AIR", "AIR.PA")
+known_stocks = [airbus,msci_world_amundi,msci_world_comstage,msci_world_it_lyxor,msci_world_it_xtrackers,msci_world_lyxor]
+
+
+av = cumulation.loc[cumulation["Portfolio"] == "Altersvorsorge"]
+
+av["WKN"].unique().size
+
+
+for wkn in av["WKN"].unique():
+   if (wkn not in known_stocks.wkn):
+       print(wkn "is not known")
+   print(wkn)
 
 
