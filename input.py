@@ -3,8 +3,25 @@ import numpy as np
 import datetime
 import matplotlib.pyplot as plt
 
+from pandas_datareader import data as pdr
+import yfinance as yf
+yf.pdr_override() 
+
+
 datefrmt = lambda x: pd.datetime.strptime(x, "%d.%m.%Y")
 encoding = "cp1252"
+
+dkb = pd.read_csv("dkb_sg.csv",
+    skiprows = 1,
+    usecols = [0,1,2,3,4,5,6,7,9],
+    parse_dates = [0,1],
+    date_parser = datefrmt,
+    decimal=",",
+    thousands=".",
+    names = ["Execute","Booking","Amount","Name","WKN","Currency","Price","Trans","Portfolio"]
+)
+dkb
+
 
 amount = pd.read_csv("ums.csv",
     skiprows = 4,
@@ -37,3 +54,22 @@ input_form["Fees"] = round(input_form["Trans"]-(input_form["Amount"]*input_form[
 input_form
 
 input_form.loc[(input_form["Execute"] < datetime.datetime(2019,2,1)) & (input_form["WKN"] == "ETF110")]
+
+pdr.get_data_yahoo("AIR.PA")
+pdr.get_data_yahoo_actions("X010.DE")
+
+class Stock:
+    def __init__(self, WKN, GoogleSymbol, YahooSymbol):
+        self.wkn = WKN
+        self.gsymbol = GoogleSymbol
+        self.ysymbol = YahooSymbol
+        
+
+msci_world_it_lyxor = Stock("LYX0GP", "FRA:LYPG", "LYPG.DE")
+msci_world_lyxor = Stock("LYX0AG", "FRA:LYYA","LYYA.DE")
+msci_world_comstage = Stock("ETF110", "FRA:X010", "X010.DE")
+msci_world_amundi = Stock("A2H59Q", "FRA:AMEW", "AMEW.DE")
+msci_world_it_xtrackers ("A113FM", "FRA:XDWT", "XDWT.DE")
+airbus ("AIR.PA", "ETR:AIR", "AIR.PA")
+
+
