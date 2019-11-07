@@ -3,22 +3,23 @@ import numpy as np
 import datetime
 import matplotlib.pyplot as plt
 
-headers = ["Execute", "Booking", "No", "Name", "WKN", "Currency", "Price", "Trans"]
 datefrmt = lambda x: pd.datetime.strptime(x, "%d.%m.%Y")
+encoding = "cp1252"
+
 amount = pd.read_csv("ums.csv",
     skiprows = 4,
     delimiter = ";",
-    encoding = "cp1252",
+    encoding = encoding,
     decimal = ".",
     usecols = [2],
     names = ["Amount"], 
     header = None
 )
 
-input = pd.read_csv("ums.csv",
+parsed = pd.read_csv("ums.csv",
     skiprows = 4,
     delimiter = ";",
-    encoding = "cp1252",
+    encoding = encoding,
     parse_dates = [0,1],
     date_parser = datefrmt, 
     decimal = ",",
@@ -27,8 +28,12 @@ input = pd.read_csv("ums.csv",
     header = None
 )
 
-input = pd.concat([input,amount], axis = 1)
-input["Fees"] = round(input["Trans"]-(input["Amount"]*input["Price"]),2)
-input
 
-input.loc[(input["Execute"] < datetime.datetime(2019,2,1)) & (input["WKN"] == "ETF110")]
+
+input_form = pd.concat([parsed,amount], axis = 1)
+input_form = input_form.assign(Portfolio="Altersvorsorge")
+
+input_form["Fees"] = round(input_form["Trans"]-(input_form["Amount"]*input_form["Price"]),2)
+input_form
+
+input_form.loc[(input_form["Execute"] < datetime.datetime(2019,2,1)) & (input_form["WKN"] == "ETF110")]
