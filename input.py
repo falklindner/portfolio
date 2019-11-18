@@ -3,127 +3,139 @@ import numpy as np
 import datetime
 import matplotlib.pyplot as plt
 import re
-
-# from pandas_datareader import data as pdr
+import csv
 import yfinance as yf
-
+# from pandas_datareader import data as pdr
+from PortfolioPerformance import PortfolioToPP
 
 
 datefrmt = lambda x: pd.datetime.strptime(x, "%d.%m.%Y")
-encoding = "cp1252"
 
-dkb = pd.read_csv("dkb_sg.csv",
-    skiprows = 1,
-    usecols = [0,1,2,3,4,5,6,7,9],
-    parse_dates = [0,1],
-    date_parser = datefrmt,
-    decimal=",",
-    thousands=".",
-    names = ["Execute","Booking","Amount","Name","WKN","Currency","Price","Trans","Portfolio"]
-)
-amount = pd.read_csv("ums.csv",
-    skiprows = 4,
-    delimiter = ";",
-    encoding = encoding,
-    decimal = ".",
-    usecols = [2],
-    names = ["Amount"], 
-    header = None
-)
-parsed = pd.read_csv("ums.csv",
-    skiprows = 4,
-    delimiter = ";",
-    encoding = encoding,
-    parse_dates = [0,1],
-    date_parser = datefrmt, 
-    decimal = ",",
-    usecols = [0,1,3,4,5,6,7],
-    names = ["Execute","Booking","Name","WKN","Currency","Price","Trans"], 
-    header = None
-)
-
-
-
-input_form = pd.concat([parsed,amount], axis = 1)
-input_form = input_form.assign(Portfolio="Altersvorsorge")
-cumulation = pd.concat([input_form,dkb],ignore_index = True)
-
-xetra = pd.read_csv("t7-xetr-allTradableInstruments.csv",
-    skiprows = 2,
-    delimiter = ";",
-    encoding = encoding,
-    decimal= "."
-)
-
-
+DfFromComdirect("data/umsaetze_9774844981_20191118-2138.csv")["WKN"].replace(toyahoo)
 
 def toyahoo(wkn):
+    xetra = pd.read_csv("data/t7-xetr-allTradableInstruments.csv",
+    skiprows = 2,
+    delimiter = ";",
+    encoding = "cp1252",
+    decimal= "."
+    )
     test = yf.Ticker(wkn)
     count = test.history(period="1m").Close.count()
     if ( count > 0):
-        return test
+        return wkn
     else:
-        wkn_mod = xetra[xetra["WKN"].str.contains(wkn)].Mnemonic.values[0] + ".DE"
-        test_mod = yf.Ticker(wkn_mod)
-        count_mod = test_mod.history(period="1m") 
-        if ( count_mod > 0): 
-            return test_mod
-        else:
+        if ( xetra[xetra["WKN"].str.contains(wkn)].Mnemonic.values.size == 0 ):
             print("WKN could not be found in Yahoo Finance")
-            exit()
+            return
+        else:
+            wkn_mod = xetra[xetra["WKN"].str.contains(wkn)].Mnemonic.values[0] + ".DE"
+            test_mod = yf.Ticker(wkn_mod)
+            count_mod = test_mod.history(period="1m").Close.count()
+            return wkn_mod
+
+input_portfolio = pd.read_csv("data/Portfolio.csv", 
+    parse_dates=[0,1]
+)
+wkn_list = input_portfolio.WKN.unique().tolist()
+yahoo_list = []
+for wkn in wkn_list:
+    yahoo_list.append(toyahoo(wkn))
+
+wkn_symbol = dict(zip(wkn_list,yahoo_list))
+wkn_symbol
+
+def DfFromDKB(path):
+    dataframe = pd.read_csv("data/dkb_sg.csv",
+        skiprows = 1,
+        usecols = [0,1,2,3,4,5,6,7,9],
+        parse_dates = [0,1],
+        date_parser = datefrmt,
+        decimal=",",
+        thousands=".",
+        names = ["Execute","Booking","Amount","Name","WKN","Currency","Price","Trans","Portfolio"]
+    )
+    dataframe["Fee"] = (dataframe["Trans"]-dataframe["Amount"]*dataframe["Price"]).round(2)
+    dataframe["Symbol"] = dataframe["WKN"].replace(wkn_symbol)
+    return dataframe
+
+def DfFromComdirect(path):
+    amount = pd.read_csv(path,
+        skiprows = 4,
+        delimiter = ";",
+        encoding = "cp1252",
+        decimal = ".",
+        usecols = [2],
+        names = ["Amount"], 
+        header = None
+    )
+    parsed = pd.read_csv(path,
+        skiprows = 4,
+        delimiter = ";",
+        encoding = "cp1252",
+        parse_dates = [0,1],
+        date_parser = datefrmt, 
+        decimal = ",",
+        usecols = [0,1,3,4,5,6,7],
+        names = ["Execute","Booking","Name","WKN","Currency","Price","Trans"], 
+        header = None
+    )
+    dataframe = pd.concat([parsed,amount], axis = 1)
+    dataframe = dataframe.assign(Portfolio="Altersvorsorge")
+    dataframe["Fee"] = (dataframe["Trans"]-dataframe["Amount"]*dataframe["Price"]).round(2)
+    dataframe["Symbol"] = dataframe["WKN"].replace(wkn_symbol)
+    return dataframe
 
 
-toyahoo("LYX0AG")
-
-test = yf.Ticker("LYX0AG")
-a = test.history(period="1m").Close.count()
 
 
-test = yf.Ticker("AMEW.DE")
-
-lookup("LYX0AG")
-xetra.loc[xetra["WKN"] == "LYX0AG"]
-
-list_wkns = pd.DataFrame(cumulation.WKN.unique(), columns=["WKN"])
-list_wkns
-
-
-
-input_form
-
-input_form.loc[(input_form["Execute"] < datetime.datetime(2019,2,1)) & (input_form["WKN"] == "ETF110")]
-
-
-class Stock:
-    def __init__(self, WKN, GoogleSymbol, YahooSymbol):
-        self.wkn = WKN
-        self.gsymbol = GoogleSymbol
-        self.ysymbol = YahooSymbol
-        self.own = 0
-    def mod(self, amount):
-        self.own = self.own + amount
+def UpdatePortfolio (Input_Trans,path):
+    Portfolio = pd.read_csv(path, 
+        parse_dates=[0,1]
+    )
+    LatestTrans = Portfolio["Execute"][Portfolio["Execute"].idxmax()]
+    Input_Trans.sort_values(by = ["Execute"], inplace= True)
+    New_Trans = Input_Trans.loc[Input_Trans["Execute"] > LatestTrans ]
+    if New_Trans.shape[0] > 0:
+        Portfolio = pd.concat([Portfolio,New_Trans],ignore_index = True, sort = False)
+        with open(path, mode = "w+", newline="\n", encoding="UTF-8") as file:
+            Portfolio.to_csv(file,
+                sep = ",",
+                quoting = csv.QUOTE_NONNUMERIC,
+                quotechar = "\"",
+                line_terminator = "\n", 
+                index = False,
+                header = True
+            )
+            print("Updated ",New_Trans.shape[0]," transactions in Portfolio.")
+    else:
+        print("Portfolio is up to date.")
 
 
 
 
 
-msci_world_it_lyxor = Stock("LYX0GP", "FRA:LYPG", "LYPG.DE")
-msci_world_lyxor = Stock("LYX0AG", "FRA:LYYA","LYYA.DE")
-msci_world_comstage = Stock("ETF110", "FRA:X010", "X010.DE")
-msci_world_amundi = Stock("A2H59Q", "FRA:AMEW", "AMEW.DE")
-msci_world_it_xtrackers = Stock("A113FM", "FRA:XDWT", "XDWT.DE")
-airbus = Stock("AIR.PA", "ETR:AIR", "AIR.PA")
-known_stocks = [airbus,msci_world_amundi,msci_world_comstage,msci_world_it_lyxor,msci_world_it_xtrackers,msci_world_lyxor]
 
 
-av = cumulation.loc[cumulation["Portfolio"] == "Altersvorsorge"]
+start = pd.Timestamp(year = 2016, month = 1, day = 1)
+today = pd.Timestamp.date(pd.Timestamp.today())
 
-av["WKN"].unique().size
 
 
-for wkn in av["WKN"].unique():
-   if (wkn not in known_stocks.wkn):
-       print(wkn "is not known")
-   print(wkn)
+hist = pd.DataFrame(
+    columns = yahoo_list,
+  #  index = pd.date_range(start=start, end=end)
+)
 
+for symbol in yahoo_list:
+    hist[symbol] = yf.Ticker(symbol).history(start = start, end = today).Close
+
+
+hist.to_csv("hist.csv")
+hist = pd.read_csv("hist.csv",
+    index_col=0,
+    parse_dates = [0],
+    header = 0,
+    skiprows = 0
+)
 

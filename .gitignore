@@ -1,6 +1,4 @@
-ums.csv
-ums1.csv
-dkb_sg.csv
+data/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
