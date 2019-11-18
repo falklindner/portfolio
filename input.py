@@ -11,8 +11,6 @@ from PortfolioPerformance import PortfolioToPP
 
 datefrmt = lambda x: pd.datetime.strptime(x, "%d.%m.%Y")
 
-DfFromComdirect("data/umsaetze_9774844981_20191118-2138.csv")["WKN"].replace(toyahoo)
-
 def toyahoo(wkn):
     xetra = pd.read_csv("data/t7-xetr-allTradableInstruments.csv",
     skiprows = 2,
