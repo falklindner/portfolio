@@ -1,17 +1,20 @@
 import pandas as pd
-import numpy as np 
-import datetime
-import matplotlib.pyplot as plt
-import re
 import csv
 import yfinance as yf
-# from pandas_datareader import data as pdr
-from PortfolioPerformance import PortfolioToPP
-
 
 datefrmt = lambda x: pd.datetime.strptime(x, "%d.%m.%Y")
+input_portfolio = pd.read_csv("data/Portfolio.csv", 
+    parse_dates=[0,1]
+)
 
-def toyahoo(wkn):
+def ReadPortfolio(path):
+    portfolio = pd.read_csv(path, 
+        parse_dates=[0,1]
+    )
+    return portfolio
+
+
+def ToYahoo(wkn):
     xetra = pd.read_csv("data/t7-xetr-allTradableInstruments.csv",
     skiprows = 2,
     delimiter = ";",
@@ -32,19 +35,14 @@ def toyahoo(wkn):
             count_mod = test_mod.history(period="1m").Close.count()
             return wkn_mod
 
-input_portfolio = pd.read_csv("data/Portfolio.csv", 
-    parse_dates=[0,1]
-)
-wkn_list = input_portfolio.WKN.unique().tolist()
-yahoo_list = []
-for wkn in wkn_list:
-    yahoo_list.append(toyahoo(wkn))
+def CreateDict(path):
+    ReadPortfolio(path)
+    wkn_symbol = input_portfolio.drop_duplicates(subset=["WKN"])[["WKN","Symbol"]].set_index("WKN").T.to_dict(orient="list")
+    return wkn_symbol
 
-wkn_symbol = dict(zip(wkn_list,yahoo_list))
-wkn_symbol
-
-def DfFromDKB(path):
-    dataframe = pd.read_csv("data/dkb_sg.csv",
+def DfFromDKB(input_path, ref_path):
+    wkn_symbol = CreateDict(ref_path)
+    dataframe = pd.read_csv(input_path,
         skiprows = 1,
         usecols = [0,1,2,3,4,5,6,7,9],
         parse_dates = [0,1],
@@ -57,8 +55,9 @@ def DfFromDKB(path):
     dataframe["Symbol"] = dataframe["WKN"].replace(wkn_symbol)
     return dataframe
 
-def DfFromComdirect(path):
-    amount = pd.read_csv(path,
+def DfFromComdirect(input_path, ref_path):
+    wkn_symbol = CreateDict(ref_path)
+    amount = pd.read_csv(input_path,
         skiprows = 4,
         delimiter = ";",
         encoding = "cp1252",
@@ -67,7 +66,7 @@ def DfFromComdirect(path):
         names = ["Amount"], 
         header = None
     )
-    parsed = pd.read_csv(path,
+    parsed = pd.read_csv(input_path,
         skiprows = 4,
         delimiter = ";",
         encoding = "cp1252",
@@ -83,8 +82,6 @@ def DfFromComdirect(path):
     dataframe["Fee"] = (dataframe["Trans"]-dataframe["Amount"]*dataframe["Price"]).round(2)
     dataframe["Symbol"] = dataframe["WKN"].replace(wkn_symbol)
     return dataframe
-
-
 
 
 def UpdatePortfolio (Input_Trans,path):
@@ -108,32 +105,3 @@ def UpdatePortfolio (Input_Trans,path):
             print("Updated ",New_Trans.shape[0]," transactions in Portfolio.")
     else:
         print("Portfolio is up to date.")
-
-
-
-
-
-
-
-start = pd.Timestamp(year = 2016, month = 1, day = 1)
-today = pd.Timestamp.date(pd.Timestamp.today())
-
-
-
-hist = pd.DataFrame(
-    columns = yahoo_list,
-  #  index = pd.date_range(start=start, end=end)
-)
-
-for symbol in yahoo_list:
-    hist[symbol] = yf.Ticker(symbol).history(start = start, end = today).Close
-
-
-hist.to_csv("hist.csv")
-hist = pd.read_csv("hist.csv",
-    index_col=0,
-    parse_dates = [0],
-    header = 0,
-    skiprows = 0
-)
-
