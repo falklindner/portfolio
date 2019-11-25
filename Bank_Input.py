@@ -85,9 +85,7 @@ def DfFromComdirect(input_path, ref_path):
 
 
 def UpdatePortfolio (Input_Trans,path):
-    Portfolio = pd.read_csv(path, 
-        parse_dates=[0,1]
-    )
+    Portfolio = ReadPortfolio(path)
     LatestTrans = Portfolio["Execute"][Portfolio["Execute"].idxmax()]
     Input_Trans.sort_values(by = ["Execute"], inplace= True)
     New_Trans = Input_Trans.loc[Input_Trans["Execute"] > LatestTrans ]
