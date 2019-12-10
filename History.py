@@ -18,7 +18,7 @@ def Update_History():
     hist = Read_History()
     lastday = hist.index[-1]
     yesterday = (pd.Timestamp.today() - pd.DateOffset(1)).replace(hour=0, minute=0, second=0,microsecond =0)
-    if (lastday <= yesterday):
+    if (lastday == yesterday):
         print("History is up to date.")
     else:
         hist_update = pd.DataFrame(

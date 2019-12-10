@@ -2,6 +2,7 @@ import BankInput
 import PortfolioView
 import constant
 import History
+import matplotlib as plt
 
 ## Paths and default settings 
 
@@ -20,17 +21,7 @@ BankInput.UpdateTransactions(input_cd,constant.transactions_path)
 History.Update_History()
 
 PortfolioView.UpdatePortfolioView()
-
-
-
-# date = portfolio_view.index[1000]
-# pf = portfolio_list[0]
-# symbol =  portfolio["Symbol"].loc[portfolio["Portfolio"] == pf].unique()[0]
-# pf_at_date = portfolio.set_index("Execute").loc[constant.start:date]
-# pf_symbol_at_date = pf_at_date.loc[(pf_at_date["Portfolio"] == pf) & (pf_at_date["Symbol"] == symbol)]
-# amount_at_date = pf_symbol_at_date["Amount"].sum()
-# fees_at_date = pf_symbol_at_date["Fee"].sum()
-# trans_at_date = pf_symbol_at_date["Trans"].sum()
+portfolio_view = PortfolioView.ReadPortfolioView()
 
 
 
@@ -47,7 +38,7 @@ PortfolioView.UpdatePortfolioView()
 
 
 
-# portfolio_view
+portfolio_view
 
 
 # portfolio_view.to_csv(portfolio_view_path)
@@ -57,5 +48,5 @@ PortfolioView.UpdatePortfolioView()
 
 # first = portfolio_view["Airbus","AIR.PA","Holdings"].ne(0).idxmax()
 
-# plt.plot(portfolio_view.loc[first:yesterday].index,portfolio_view.loc[first:yesterday]["Airbus","AIR.PA","Value"])
+plt.plot(portfolio_view.loc[constant.start:yesterday].index,portfolio_view.loc[first:yesterday]["Airbus","AIR.PA","Value"])
 # plt.show()

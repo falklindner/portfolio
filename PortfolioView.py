@@ -7,14 +7,16 @@ import csv
 
 
 ## Checking if an update of Portfolio View is necessary (due to being to old or having new indices)
-
-def UpdatePortfolioView():
+def ReadPortfolioView():
     portfolio_view = pd.read_csv(constant.portfolio_view_path, 
         header=[0,1,2], 
         index_col = 0,
         parse_dates = [0]
     )
+    return portfolio_view
 
+def UpdatePortfolioView():
+    portfolio_view = ReadPortfolioView()    
 ## Checking if new Portfolios / Symbols (WIP)
     portfolio_list_current = portfolio_view.columns.get_level_values(0).unique()
     symbol_list_current = portfolio_view.columns.get_level_values(1).unique()
@@ -47,7 +49,7 @@ def Update_Portfolio_View_Time(transactions,portfolio_view):
             for pf in portfolio_list_current:
                 symbol_list_current = portfolio_view[pf].columns.get_level_values(0).unique()
                 for symbol in symbol_list_current:
-                    print(symbol + " " + pf + " " + str(date))
+                   # print(symbol + " " + pf + " " + str(date))
                     transactions_symbol_at_date = transactions_to_date.loc[(transactions_to_date["Portfolio"] == pf) & (transactions_to_date["Symbol"] == symbol)]
                     amount_at_date = transactions_symbol_at_date["Amount"].sum()
                     fees_at_date = transactions_symbol_at_date["Fee"].sum()
