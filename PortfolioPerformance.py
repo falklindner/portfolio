@@ -1,13 +1,13 @@
 import pandas as pd
 import datetime
 import csv
-
+import BankInput
+import constant
 
 
 def PortfolioToPP (input_path,output_path):
-    input_portfolio = pd.read_csv(input_path, 
-        parse_dates=[0,1]
-    )
+    input_portfolio = BankInput.ReadTransactions(input_path)
+    
     pp_headers = [
         'Symbol', 
         'Name', 
@@ -44,6 +44,7 @@ def PortfolioToPP (input_path,output_path):
                 "Currency":data_basis["Currency"].unique(),
                 "Source":"1"
             }
+            
             symbol_frame = pd.DataFrame(top_row_data, columns=pp_headers)
             transaction_data = {
                 "Symbol":symbol,
@@ -54,11 +55,13 @@ def PortfolioToPP (input_path,output_path):
                 "Cost Per Share":data_basis["Price"],
                 "Cost Basis Method":0,
                 "Commission":data_basis["Fee"],
-                "Date":data_basis["Execute"].apply(datetime.date.isoformat) + " GMT+01:00",
+                "Date":data_basis.index.map(datetime.date.isoformat) + " GMT+01:00",
                 "Source":1,
                 "Type":"Buy"
             }
+            
             transaction_frame = pd.DataFrame(transaction_data, columns=pp_headers)
+
             symbol_frame = symbol_frame.append(transaction_frame, ignore_index=True)
             csv_raw += symbol_frame.to_csv(
                 sep = ",",
@@ -68,6 +71,7 @@ def PortfolioToPP (input_path,output_path):
                 index = False,
                 header = False
             )
+            
             csv_raw += "\n"
 
     with open(output_path, mode = "w+", newline="\n", encoding="UTF-8") as file:

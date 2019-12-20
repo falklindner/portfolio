@@ -2,7 +2,7 @@ import pandas as pd
 import csv
 import yfinance as yf
 import constant
-
+import glob
 
 def ReadTransactions(path):
     portfolio = pd.read_csv(path, 
@@ -34,61 +34,63 @@ def ToYahoo(wkn):
             return wkn_mod
 
 
-##Buggy
-# def UpdateDict(path):
-#     input_portfolio = ReadTransactions(path)
-#     wkn_symbol = input_portfolio.drop_duplicates(subset=["WKN"])[["WKN","Symbol"]].set_index("WKN").T.to_dict(orient="list")
-#     with open("data/dict.csv", "w", newline="\n", encoding="UTF-8") as file:
-#         writer = csv.writer(file)
-#         for key,value in wkn_symbol.items():
-#             writer.writerow([key,value])
-
 def ReadDict():
     with open ("data/dict.csv") as file:
         reader = csv.reader(file)
         wkn_dict = dict(reader)
     return wkn_dict
 
-def DfFromDKB(input_path):
+def DfFromDKB(path):
+    files = [f for f in glob.glob(path + constant.dkb_pattern)]
     wkn_symbol = ReadDict()
-    dataframe = pd.read_csv(input_path,
-        skiprows = 1,
-        usecols = [0,1,2,3,4,5,6,7,9],
-        parse_dates = [0,1],
-        date_parser = constant.datefrmt,
-        decimal=",",
-        thousands=".",
-        names = ["Execute","Booking","Amount","Name","WKN","Currency","Price","Trans","Portfolio"]
-    )
+    dataframe = pd.DataFrame()
+    for f in files:
+        fileframe = pd.read_csv(f,
+            skiprows = 1,
+            usecols = [0,1,2,3,4,5,6,7,9],
+            parse_dates = [0,1],
+            date_parser = constant.datefrmt,
+            decimal=",",
+            thousands=".",
+            names = ["Execute","Booking","Amount","Name","WKN","Currency","Price","Trans","Portfolio"]
+        )
+        dataframe = dataframe.append(fileframe)
+    dataframe.drop_duplicates(inplace=True)
     dataframe["Fee"] = (dataframe["Trans"]-dataframe["Amount"]*dataframe["Price"]).round(2)
     dataframe["Symbol"] = dataframe["WKN"].replace(wkn_symbol)
     dataframe = dataframe.set_index("Execute")
     dataframe = dataframe.sort_index()
     return dataframe
 
-def DfFromComdirect(input_path):
+def DfFromComdirect(path):
+    files = [f for f in glob.glob(path + constant.cd_pattern)]
     wkn_symbol = ReadDict()
-    amount = pd.read_csv(input_path,
-        skiprows = 4,
-        delimiter = ";",
-        encoding = "cp1252",
-        decimal = ".",
-        usecols = [2],
-        names = ["Amount"], 
-        header = None
-    )
-    parsed = pd.read_csv(input_path,
-        skiprows = 4,
-        delimiter = ";",
-        encoding = "cp1252",
-        parse_dates = [0,1],
-        date_parser = constant.datefrmt, 
-        decimal = ",",
-        usecols = [0,1,3,4,5,6,7],
-        names = ["Execute","Booking","Name","WKN","Currency","Price","Trans"], 
-        header = None
-    )
-    dataframe = pd.concat([parsed,amount], axis = 1)
+    dataframe = pd.DataFrame()
+    for f in files:
+        amount = pd.read_csv(f,
+            skiprows = 4,
+            delimiter = ";",
+            encoding = "cp1252",
+            decimal = ".",
+            usecols = [2],
+            names = ["Amount"], 
+            header = None
+        )
+        parsed = pd.read_csv(f,
+            skiprows = 4,
+            delimiter = ";",
+            encoding = "cp1252",
+            parse_dates = [0,1],
+            date_parser = constant.datefrmt, 
+            decimal = ",",
+            usecols = [0,1,3,4,5,6,7],
+            names = ["Execute","Booking","Name","WKN","Currency","Price","Trans"], 
+            header = None
+        )
+        fileframe = pd.concat([parsed,amount], axis = 1)
+        dataframe = dataframe.append(fileframe)
+        
+    dataframe.drop_duplicates(inplace=True)
     dataframe = dataframe.assign(Portfolio="Altersvorsorge")
     dataframe["Fee"] = (dataframe["Trans"]-dataframe["Amount"]*dataframe["Price"]).round(2)
     dataframe["Symbol"] = dataframe["WKN"].replace(wkn_symbol)
@@ -98,7 +100,7 @@ def DfFromComdirect(input_path):
 
 def LoadTransactions():
     input_dkb = DfFromDKB(constant.dkb_path)
-    input_cd = DfFromComdirect("data/umsaetze_all.csv")
+    input_cd = DfFromComdirect(constant.dkb_path)
     input_all = pd.concat([input_dkb,input_cd], sort=False).sort_index()
     with open(constant.transactions_path, mode = "w+", newline="\n", encoding="UTF-8") as file:
             input_all.to_csv(file,
