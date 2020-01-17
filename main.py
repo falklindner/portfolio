@@ -14,10 +14,12 @@ import PortfolioPerformance
 input_dkb = BankInput.DfFromDKB(constant.dkb_path)
 input_cd = BankInput.DfFromComdirect(constant.cd_path)
 
+
 ## Updating the main transaction repository (transactions_path)
 
 BankInput.UpdateTransactions(input_dkb,constant.transactions_path)
 BankInput.UpdateTransactions(input_cd,constant.transactions_path)
+BankInput.LoadTransactions()
 
 History.Update_History()
 PortfolioView.UpdatePortfolioView()
@@ -27,8 +29,7 @@ PortfolioView.UpdatePortfolioView()
 transactions = BankInput.ReadTransactions(constant.transactions_path)
 portfolio_view = PortfolioView.ReadPortfolioView()
 
-
-# PortfolioPerformance.PortfolioToPP(constant.transactions_path, "data/export.csv")
+PortfolioPerformance.PortfolioToPP(constant.transactions_path, "data/export.csv")
 
 
 

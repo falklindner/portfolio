@@ -120,7 +120,7 @@ def UpdateTransactions(Input_Trans,Ref_Trans):
     New_Trans = Input_Trans[Input_Trans.index > LatestTrans ]
     if New_Trans.shape[0] > 0:
         Portfolio = pd.concat([Portfolio,New_Trans],ignore_index = True, sort = False)
-        with open(Ref_Trans, mode = "w+", newline="\n", encoding="UTF-8") as file:
+        with open(Ref_Trans, mode = "a+", newline="\n", encoding="UTF-8") as file:
             New_Trans.to_csv(file,
                 sep = ",",
                 quoting = csv.QUOTE_NONNUMERIC,

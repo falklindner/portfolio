@@ -61,6 +61,8 @@ def PortfolioToPP (input_path,output_path):
             }
             
             transaction_frame = pd.DataFrame(transaction_data, columns=pp_headers)
+            transaction_frame.loc[transaction_frame["Quantity"] < 0, "Type"] = "Sell"
+            transaction_frame.loc[transaction_frame["Quantity"] < 0,"Quantity"] = transaction_frame.loc[transaction_frame["Quantity"] < 0,"Quantity"].mul(-1)
 
             symbol_frame = symbol_frame.append(transaction_frame, ignore_index=True)
             csv_raw += symbol_frame.to_csv(
@@ -76,3 +78,5 @@ def PortfolioToPP (input_path,output_path):
 
     with open(output_path, mode = "w+", newline="\n", encoding="UTF-8") as file:
         file.write(csv_raw)
+
+
