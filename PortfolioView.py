@@ -4,7 +4,7 @@ import BankInput
 import constant
 import History
 import csv
-
+import FinancialFunc
 
 ## Checking if an update of Portfolio View is necessary (due to being to old or having new indices)
 def ReadPortfolioView():
@@ -56,7 +56,7 @@ def Update_Portfolio_View_Time(transactions,portfolio_view):
                     trans_at_date = transactions_symbol_at_date["Trans"].sum()
 
                     xirr_list = ((-1)*transactions_symbol_at_date["Trans"]).reset_index().values.tolist()
-                    xirr_list.append(date,amount_at_date * hist.loc[date,symbol])
+                    xirr_list.append([date,amount_at_date * hist.loc[date,symbol]])
                 
 
                     portfolio_view_update.loc[date,(pf,symbol,"Holdings")] = amount_at_date
