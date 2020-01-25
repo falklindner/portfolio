@@ -4,6 +4,7 @@ import constant
 import History
 import matplotlib as plt
 import PortfolioPerformance
+import FinancialFunc
 
 ## Paths and default settings 
 
@@ -19,7 +20,7 @@ input_cd = BankInput.DfFromComdirect(constant.cd_path)
 
 BankInput.UpdateTransactions(input_dkb,constant.transactions_path)
 BankInput.UpdateTransactions(input_cd,constant.transactions_path)
-BankInput.LoadTransactions()
+#BankInput.LoadTransactions()
 
 History.Update_History()
 PortfolioView.UpdatePortfolioView()

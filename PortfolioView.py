@@ -55,8 +55,8 @@ def Update_Portfolio_View_Time(transactions,portfolio_view):
                     fees_at_date = transactions_symbol_at_date["Fee"].sum()
                     trans_at_date = transactions_symbol_at_date["Trans"].sum()
 
-                    irr_list = ((-1)*transactions_symbol_at_date["Trans"]).tolist()
-                    irr_list.append(amount_at_date * hist.loc[date,symbol])
+                    xirr_list = ((-1)*transactions_symbol_at_date["Trans"]).reset_index().values.tolist()
+                    xirr_list.append(date,amount_at_date * hist.loc[date,symbol])
                 
 
                     portfolio_view_update.loc[date,(pf,symbol,"Holdings")] = amount_at_date
@@ -64,7 +64,7 @@ def Update_Portfolio_View_Time(transactions,portfolio_view):
                     portfolio_view_update.loc[date,(pf,symbol,"Fees")] = fees_at_date
                     portfolio_view_update.loc[date,(pf,symbol,"RAD")] =  (amount_at_date * hist.loc[date,symbol]) / trans_at_date ## Fees are included in Amount / Transaction cost
                     portfolio_view_update.loc[date,(pf,symbol,"RADTX")] =  (0.75 * amount_at_date * hist.loc[date,symbol]) / trans_at_date ## Return with 25% stock rerturns tax
-                    portfolio_view_update.loc[date,(pf,symbol,"XIRR")] = np.irr(irr_list)
+                    portfolio_view_update.loc[date,(pf,symbol,"XIRR")] = FinancialFunc.xirr(xirr_list)
     
         portfolio_view_new = pd.concat([portfolio_view,portfolio_view_update])
         with open(constant.portfolio_view_path, mode = "w+", newline="\n", encoding="UTF-8") as file:
