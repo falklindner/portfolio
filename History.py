@@ -2,7 +2,6 @@ import yfinance as yf
 import pandas as pd
 import constant
 
-
 def Read_History():
     hist = pd.read_csv(constant.hist_path,
     index_col=0,
@@ -16,7 +15,11 @@ def Read_History():
 
 def Update_History():
     hist = Read_History()
-    lastday = hist.index[-1]
+    if (hist.size == 0):
+        print("Found empty History")
+        lastday = constant.start
+    else:
+        lastday = hist.index[-1]
     yesterday = (pd.Timestamp.today() - pd.DateOffset(1)).replace(hour=0, minute=0, second=0,microsecond =0)
     if (lastday == yesterday):
         print("History is up to date.")

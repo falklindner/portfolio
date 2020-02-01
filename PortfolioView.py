@@ -8,12 +8,27 @@ import FinancialFunc
 
 ## Checking if an update of Portfolio View is necessary (due to being to old or having new indices)
 def ReadPortfolioView():
-    portfolio_view = pd.read_csv(constant.portfolio_view_path, 
+    if (pd.read_csv(constant.portfolio_view_path,header=[0,1,2]).size == 0):
+        raw = pd.read_csv(constant.portfolio_view_path, 
+        header=[0,1,2],
+        )
+        portfolio_view = pd.DataFrame(
+        columns=pd.MultiIndex.from_tuples(raw.columns[1:], names = raw.columns[0]),
+#        index=pd.date_range(start=constant.start, end=constant.start)
+        )
+
+    else: 
+        portfolio_view = pd.read_csv(constant.portfolio_view_path, 
         header=[0,1,2], 
         index_col = 0,
         parse_dates = [0]
-    )
+        )
     return portfolio_view
+
+
+
+
+pd.read_csv("data/pfview-old.csv",header=[0,1,2],index_col = 0,parse_dates = [0]).columns.size
 
 def UpdatePortfolioView():
     portfolio_view = ReadPortfolioView()    
@@ -32,7 +47,11 @@ def UpdatePortfolioView():
 ## 
 
 def Update_Portfolio_View_Time(transactions,portfolio_view):
-    lastday = portfolio_view.index[-1]
+    if (portfolio_view.index.size == 0):
+        print("Found empty PortfolioView")
+        lastday = constant.start
+    else:
+        lastday = portfolio_view.index[-1]    
     yesterday = (pd.Timestamp.today() - pd.DateOffset(1)).replace(hour=0, minute=0, second=0,microsecond =0)
     hist = History.Read_History()
     if (lastday == yesterday):
@@ -42,29 +61,39 @@ def Update_Portfolio_View_Time(transactions,portfolio_view):
         columns=portfolio_view.columns,
         index=pd.date_range(start=lastday, end=yesterday, closed="right")
         )
-        print("Updating the following days in Portfolio View: "+ portfolio_view_update.index.strftime("%d.%m").values)
+
         for date in portfolio_view_update.index:
-            transactions_to_date =  transactions.loc[constant.start:yesterday]
+            print("Updating the following day "+ date.strftime("%d.%m.%y"))
+            transactions_to_date =  transactions.loc[constant.start:date]
             portfolio_list_current = portfolio_view.columns.get_level_values(0).unique()
             for pf in portfolio_list_current:
                 symbol_list_current = portfolio_view[pf].columns.get_level_values(0).unique()
                 for symbol in symbol_list_current:
-                   # print(symbol + " " + pf + " " + str(date))
+                    # print(symbol + " " + pf + " " + str(date))
                     transactions_symbol_at_date = transactions_to_date.loc[(transactions_to_date["Portfolio"] == pf) & (transactions_to_date["Symbol"] == symbol)]
                     amount_at_date = transactions_symbol_at_date["Amount"].sum()
                     fees_at_date = transactions_symbol_at_date["Fee"].sum()
                     trans_at_date = transactions_symbol_at_date["Trans"].sum()
-
-                    xirr_list = ((-1)*transactions_symbol_at_date["Trans"]).reset_index().values.tolist()
-                    xirr_list.append([date,amount_at_date * hist.loc[date,symbol]])
-                
 
                     portfolio_view_update.loc[date,(pf,symbol,"Holdings")] = amount_at_date
                     portfolio_view_update.loc[date,(pf,symbol,"Value")] = amount_at_date * hist.loc[date,symbol]
                     portfolio_view_update.loc[date,(pf,symbol,"Fees")] = fees_at_date
                     portfolio_view_update.loc[date,(pf,symbol,"RAD")] =  (amount_at_date * hist.loc[date,symbol]) / trans_at_date ## Fees are included in Amount / Transaction cost
                     portfolio_view_update.loc[date,(pf,symbol,"RADTX")] =  (0.75 * amount_at_date * hist.loc[date,symbol]) / trans_at_date ## Return with 25% stock rerturns tax
-                    portfolio_view_update.loc[date,(pf,symbol,"XIRR")] = FinancialFunc.xirr(xirr_list)
+                    
+                    if (amount_at_date == 0):
+                        portfolio_view_update.loc[date,(pf,symbol,"XIRR")] = 0
+                    else:
+                        xirr_list = ((-1)*transactions_symbol_at_date["Trans"]).reset_index().values.tolist()
+                        xirr_list.append([date,amount_at_date * hist.loc[date,symbol]])
+                        try: 
+                            xirr = FinancialFunc.xirr(xirr_list)
+                            if (xirr > 1.5):
+                                portfolio_view_update.loc[date,(pf,symbol,"XIRR")] = 0
+                            else: 
+                                portfolio_view_update.loc[date,(pf,symbol,"XIRR")] = xirr
+                        except RuntimeError:
+                            portfolio_view_update.loc[date,(pf,symbol,"XIRR")] = 0
     
         portfolio_view_new = pd.concat([portfolio_view,portfolio_view_update])
         with open(constant.portfolio_view_path, mode = "w+", newline="\n", encoding="UTF-8") as file:
