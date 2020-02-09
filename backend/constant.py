@@ -12,7 +12,7 @@ cd_pattern = "ums*.csv"
 
 
 transactions_path = "data/transactions.csv"
-hist_path = "data/hist.csv"
+hist_path = "data/newhist.csv"
 portfolio_view_path = "data/pfview.csv"
 dict_path = "data/dict.csv"
 

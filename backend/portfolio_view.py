@@ -1,10 +1,10 @@
 import pandas as pd
 import numpy as np
-import BankInput
-import constant
-import History
+import backend.bank_input as BankInput
+import backend.constant as constant
+# import backend.history as History
 import csv
-import FinancialFunc
+# import FinancialFunc
 
 ## Checking if an update of Portfolio View is necessary (due to being to old or having new indices)
 def ReadPortfolioView():
@@ -24,7 +24,6 @@ def ReadPortfolioView():
         parse_dates = [0]
         )
     return portfolio_view
-
 
 
 
