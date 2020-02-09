@@ -27,8 +27,6 @@ def ReadPortfolioView():
 
 
 
-pd.read_csv("data/pfview-old.csv",header=[0,1,2],index_col = 0,parse_dates = [0]).columns.size
-
 def UpdatePortfolioView():
     portfolio_view = ReadPortfolioView()    
 ## Checking if new Portfolios / Symbols (WIP)
