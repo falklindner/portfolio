@@ -1,18 +1,18 @@
-import constant
-import BankInput
-import History
+#import constant
+#import BankInput
+#import History
 import datetime
 from scipy import optimize 
 
 
-def SymbolProperties(date,pf,sym):
-    hist = History.Read_History()
-    transactions = BankInput.ReadTransactions(constant.transactions_path)
-
-
-    Holdings = transactions["Amount"].loc[(transactions["Portfolio"] == pf) & ( transactions["Symbol"] == sym)].loc[constant.start:date].sum()
-    Value = Holdings * hist.loc[date,sym]
-    return [Holdings,Value]
+#def SymbolProperties(date,pf,sym):
+#    hist = History.Read_History()
+#    transactions = BankInput.ReadTransactions(constant.transactions_path)
+#
+#
+#    Holdings = transactions["Amount"].loc[(transactions["Portfolio"] == pf) & ( transactions["Symbol"] == sym)].loc[constant.start:date].sum()
+#    Value = Holdings * hist.loc[date,sym]
+#    return [Holdings,Value]
 
 def secant_method(tol, f, x0):
     """

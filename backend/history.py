@@ -4,16 +4,12 @@ import backend.constant as constant
 import backend.secrets as secrets
 import logging
 import time
-
 from alpha_vantage.timeseries import TimeSeries
 
 
 # import yfinance as yf
 
-logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
-logging.basicConfig(level=logging.DEBUG)
-logging.basicConfig(filename="backend.log")
-
+logging.basicConfig(filename="backend.log", format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.DEBUG)
 
 
 

@@ -4,11 +4,11 @@ import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objects as go
 import pandas as pd
-import PortfolioView
-import constant
-import BankInput
-import History
-import FinancialFunc
+import backend.portfolio_view as PortfolioView
+import backend.constant as constant
+import backend.bank_input as BankInput
+import backend.history as History
+import frontend.financial_func as FinancialFunc
 
 pfview = PortfolioView.ReadPortfolioView()
 transactions = BankInput.ReadTransactions(constant.transactions_path)
