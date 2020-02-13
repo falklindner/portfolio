@@ -127,61 +127,63 @@ def Read_History():
 
 ## Construct data frame with historical values of all symbols in portfolio
 
-def Update_History():
-    
-    hist = Read_History()
+def Update_History(): 
+    if (pd.Timestamp.today() < pd.Timestamp.today().replace(hour = 20, minute = 0, second = 0)):
+        logging.warning("Need to wait until 20:00") ## After 20:00 Yahoo Finance will store the EoD / Close price (that is sometimes not present the next day)
+    else: 
+        hist = Read_History()
 
-    ## Determining the time period for history file update
-    if (hist.size == 0):
-        logging.warning("Found empty History. Renewing history from " + str(constant.start))
-        Rebuild_History()
-        return
-    else:
-        lastday = hist.index[-1]
-    today = pd.Timestamp.today()
-    
-    ## Creating the list of columns (stocks) for the history file (either by old hist.csv or by checking portfolio)
-    if (hist.columns.size == 0):
-        logging.warning("Using Symbols from portfolio instead of hist.csv")
-        symbols = backend.portfolio_view.ReadPortfolioView().columns.get_level_values(1).unique()
-        properties = ["Close", "Volume", "Dividends"]
-        hist_columns = pd.MultiIndex.from_product([symbols,properties], names=["Symbol", "Property"])
-    else:
-        hist_columns = hist.columns
-
-    ## Main update loop. Creating Dataframe to append to old history
-    if (lastday == today):
-        logging.debug("History is up to date.")
-    else:
-        hist_update = pd.DataFrame(
-        columns=hist_columns,
-        index=pd.date_range(start=lastday, end=today, closed="right"),
-        dtype="float64"
-        )
-
-        ## Update loop
-        logging.debug("Updating the following days in History: "+ str(hist_update.index.strftime("%d.%m").values))
+        ## Determining the time period for history file update
+        if (hist.size == 0):
+            logging.warning("Found empty History. Renewing history from " + str(constant.start))
+            Rebuild_History()
+            return
+        else:
+            lastday = hist.index[-1]
+        today = pd.Timestamp.today()
         
-        symbol_list_string = ""
-        for symbol in hist_columns.get_level_values(0).unique():
-            symbol_list_string = str(symbol_list_string + symbol + " ")
-        
-        data_recent = yf.download(  
-        tickers = symbol_list_string,
-        start = lastday + pd.DateOffset(1),
-        end = pd.Timestamp.today(),
-        interval = "1d",
-        group_by = 'ticker',
-        actions= True,
-        auto_adjust = True,
-        prepost = True,
-        threads = True,
-        proxy = None
-        )
-        hist_update = data_recent.loc[:,(slice(None),("Close","Volume","Dividends"))]
+        ## Creating the list of columns (stocks) for the history file (either by old hist.csv or by checking portfolio)
+        if (hist.columns.size == 0):
+            logging.warning("Using Symbols from portfolio instead of hist.csv")
+            symbols = backend.portfolio_view.ReadPortfolioView().columns.get_level_values(1).unique()
+            properties = ["Close", "Volume", "Dividends"]
+            hist_columns = pd.MultiIndex.from_product([symbols,properties], names=["Symbol", "Property"])
+        else:
+            hist_columns = hist.columns
 
-        hist = hist.append(hist_update)
-        hist.sort_index(axis=1, inplace=True)
-        hist.update(hist.loc[:,(slice(None),slice("Close"))].interpolate(method="linear")) # Linear interpolation for missing data in all "Close" columns 
-        hist.update(hist.loc[:,(slice(None),("Volume","Dividends"))].fillna(0))
-        hist.to_csv(constant.hist_path)
+        ## Main update loop. Creating Dataframe to append to old history
+        if (lastday == today):
+            logging.debug("History is up to date.")
+        else:
+            hist_update = pd.DataFrame(
+            columns=hist_columns,
+            index=pd.date_range(start=lastday, end=today, closed="right"),
+            dtype="float64"
+            )
+
+            ## Update loop
+            logging.debug("Updating the following days in History: "+ str(hist_update.index.strftime("%d.%m").values))
+            
+            symbol_list_string = ""
+            for symbol in hist_columns.get_level_values(0).unique():
+                symbol_list_string = str(symbol_list_string + symbol + " ")
+            
+            data_recent = yf.download(  
+            tickers = symbol_list_string,
+            start = lastday + pd.DateOffset(1),
+            end = pd.Timestamp.today(),
+            interval = "1d",
+            group_by = 'ticker',
+            actions= True,
+            auto_adjust = True,
+            prepost = True,
+            threads = True,
+            proxy = None
+            )
+            hist_update = data_recent.loc[:,(slice(None),("Close","Volume","Dividends"))]
+
+            hist = hist.append(hist_update)
+            hist.sort_index(axis=1, inplace=True)
+            hist.update(hist.loc[:,(slice(None),slice("Close"))].interpolate(method="linear")) # Linear interpolation for missing data in all "Close" columns 
+            hist.update(hist.loc[:,(slice(None),("Volume","Dividends"))].fillna(0))
+            hist.to_csv(constant.hist_path)
