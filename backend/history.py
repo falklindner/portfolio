@@ -140,7 +140,7 @@ def Update_History():
             return
         else:
             lastday = hist.index[-1]
-        today = pd.Timestamp.today()
+        today = pd.Timestamp.today().replace(hour = 0, minute = 0, second = 0, microsecond = 0)
         
         ## Creating the list of columns (stocks) for the history file (either by old hist.csv or by checking portfolio)
         if (hist.columns.size == 0):
