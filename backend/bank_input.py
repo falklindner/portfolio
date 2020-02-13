@@ -6,7 +6,7 @@ import glob
 
 def ReadTransactions(path):
     portfolio = pd.read_csv(path, 
-        parse_dates=[0,1],
+        parse_dates=[0],
         index_col=0
     )
     return portfolio
@@ -102,6 +102,8 @@ def LoadTransactions():
     input_dkb = DfFromDKB(constant.dkb_path)
     input_cd = DfFromComdirect(constant.dkb_path)
     input_all = pd.concat([input_dkb,input_cd], sort=False).sort_index()
+    input_all["Execute"] = input_all.index
+    input_all.set_index("Booking", inplace=True)
     with open(constant.transactions_path, mode = "w+", newline="\n", encoding="UTF-8") as file:
             input_all.to_csv(file,
                 sep = ",",
@@ -112,7 +114,7 @@ def LoadTransactions():
                 header = True
             )
 
-
+Input_Trans = DfFromComdirect(constant.cd_path)
 
 def UpdateTransactions(Input_Trans,Ref_Trans):
     Portfolio = ReadTransactions(Ref_Trans)
@@ -120,8 +122,8 @@ def UpdateTransactions(Input_Trans,Ref_Trans):
     New_Trans = Input_Trans[Input_Trans.index > LatestTrans ]
     if New_Trans.shape[0] > 0:
         Portfolio = pd.concat([Portfolio,New_Trans],ignore_index = True, sort = False)
-        with open(Ref_Trans, mode = "a+", newline="\n", encoding="UTF-8") as file:
-            New_Trans.to_csv(file,
+        with open(Ref_Trans, mode = "w+", newline="\n", encoding="UTF-8") as file:
+            Portfolio.to_csv(file,
                 sep = ",",
                 quoting = csv.QUOTE_NONNUMERIC,
                 quotechar = "\"",

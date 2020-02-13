@@ -1,6 +1,8 @@
 import pandas as pd 
+import datetime
 
-start = pd.Timestamp(year = 2016, month = 1, day = 15)
+start = pd.Timestamp(year = 2016, month = 1, day = 18)
+yesterday = (pd.Timestamp.today() - pd.DateOffset(1)).replace(hour=0, minute=0, second=0,microsecond =0)
 
 xetra = "data/t7-xetr-allTradableInstruments.csv"
 
@@ -17,5 +19,5 @@ portfolio_view_path = "data/pfview.csv"
 dict_path = "data/dict.csv"
 
 
-datefrmt = lambda x: pd.datetime.strptime(x, "%d.%m.%Y")
-pf_property_list = ["Holdings", "Value", "Fees", "RAD", "RADTX", "XIRR"]
+datefrmt = lambda x: datetime.datetime.strptime(x, "%d.%m.%Y")
+pf_property_list = ["Holdings", "Value", "Fees", "Return(tot)", "Return(rel)", "XIRR"]

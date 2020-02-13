@@ -8,7 +8,7 @@ import backend.portfolio_view as PortfolioView
 import backend.constant as constant
 import backend.bank_input as BankInput
 import backend.history as History
-import frontend.financial_func as FinancialFunc
+import backend.financial_func as FinancialFunc
 
 pfview = PortfolioView.ReadPortfolioView()
 transactions = BankInput.ReadTransactions(constant.transactions_path)
