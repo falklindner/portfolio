@@ -44,6 +44,7 @@ def BuildNewColumns():
     return multiindex
     
 def LoadPortfolioView():
+    
     firstday = constant.start
     yesterday = backend.constant.yesterday
     pfview_cols = BuildNewColumns()
@@ -66,6 +67,7 @@ def LoadPortfolioView():
                index = True,
                header = True
     )
+    logging.warning("Erased pfview.csv values and loaded a new header.")
 
 
 
@@ -78,22 +80,28 @@ def UpdatePortfolioView():
 
 def Update_Portfolio_View_Time(transactions,portfolio_view):
     if (portfolio_view.index.size == 0):
-        print("Found empty PortfolioView")
+        logging.warning("Found empty Portfolio View")
         lastday = constant.start
     else:
-        lastday = portfolio_view.index[-1]    
+        lastday = portfolio_view.index[-1]
     yesterday = backend.constant.yesterday
+
     hist = backend.history.Read_History()
+    if (hist.index[-1] < yesterday): 
+        logging.warning("History is not up to date, cannot update portfolio")
+        return 
+
+    
     if (lastday == yesterday):
-        print("Portfolio View is up to date.")
+        logging.info("Portfolio View is up to date.")
     else:
         portfolio_view_update = pd.DataFrame(
         columns=portfolio_view.columns,
         index=pd.date_range(start=lastday, end=yesterday, closed="right")
         )
-
+        logging.info("Updating the days from " + lastday.strftime("%d.%m.%y") + " until " + yesterday.strftime("%d.%m.%y"))
         for date in portfolio_view_update.index:
-            print("Updating the following day "+ date.strftime("%d.%m.%y"))
+            
             transactions_to_date =  transactions.loc[constant.start:date]
             portfolio_list_current = portfolio_view.columns.get_level_values(0).unique()
             for pf in portfolio_list_current:
@@ -105,6 +113,8 @@ def Update_Portfolio_View_Time(transactions,portfolio_view):
                     fees_at_date = transactions_symbol_at_date["Fee"].sum()
                     trans_at_date = transactions_symbol_at_date["Trans"].sum()
 
+                    portfolio_view_update.loc[date,(pf,symbol,"Price")] = hist.loc[date,(symbol,"Close")]
+                    portfolio_view_update.loc[date,(pf,symbol,"Transactions")] = trans_at_date
                     portfolio_view_update.loc[date,(pf,symbol,"Holdings")] = amount_at_date
                     portfolio_view_update.loc[date,(pf,symbol,"Value")] = amount_at_date * hist.loc[date,(symbol,"Close")]
                     portfolio_view_update.loc[date,(pf,symbol,"Fees")] = fees_at_date
@@ -138,42 +148,3 @@ def Update_Portfolio_View_Time(transactions,portfolio_view):
                index = True,
                header = True
             )
-        
-        
-
-
-
-
-
-
-# # Creating a multiindex-column for portfolio view
-# portfolio_list = transactions["Portfolio"].unique()
-
-# property_list = constant.pf_property_list
-
-# multi_index_data = []
-# for pf in portfolio_list:
-#     for symbol in transactions["Symbol"].loc[transactions["Portfolio"] == pf].unique():
-#         for prop in property_list:
-#             multi_index_data += [[pf,symbol,prop]]
-
-# cols = pd.MultiIndex.from_tuples(multi_index_data, names=["Portfolio", "Symbol", "Properties"])
-# cols
-# # Creating empty portfolio view data frame -- obsolete
-# portfolio_view = pd.DataFrame(
-#     columns=cols,
-#     index=pd.date_range(start=constant.start, end=yesterday)
-# )
-
-# with open(constant.portfolio_view_path, mode = "w+", newline="\n", encoding="UTF-8") as file:
-#         portfolio_view.to_csv(file,
-#                sep = ",",
-#                quoting = csv.QUOTE_NONNUMERIC,
-#                quotechar = "\"",
-#                line_terminator = "\n", 
-#                index = True,
-#                header = True
-#             )
-# ## Rearranging transactions to Portfolio/Stocks vs. time view
-
-
