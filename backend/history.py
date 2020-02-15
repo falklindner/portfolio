@@ -6,11 +6,7 @@ import logging
 import time
 # from alpha_vantage.timeseries import TimeSeries
 
-
 import yfinance as yf
-
-logging.basicConfig(filename="backend.log", format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.DEBUG)
-
 
 
 def Rebuild_History():

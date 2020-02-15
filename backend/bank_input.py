@@ -1,12 +1,14 @@
+import logging
 import pandas as pd
 import csv
 import yfinance as yf
 import backend.constant as constant
 import glob
 
+
 def ReadTransactions(path):
     portfolio = pd.read_csv(path, 
-        parse_dates=[0],
+        parse_dates=[0,1],
         index_col=0
     )
     return portfolio
@@ -25,7 +27,7 @@ def ToYahoo(wkn):
         return wkn
     else:
         if ( xetra[xetra["WKN"].str.contains(wkn)].Mnemonic.values.size == 0 ):
-            print("WKN could not be found in Yahoo Finance")
+            logging.warning("WKN could not be found in Yahoo Finance")
             return
         else:
             wkn_mod = xetra[xetra["WKN"].str.contains(wkn)].Mnemonic.values[0] + ".DE"
@@ -35,7 +37,7 @@ def ToYahoo(wkn):
 
 
 def ReadDict():
-    with open ("data/dict.csv") as file:
+    with open (constant.dict_path) as file:
         reader = csv.reader(file)
         wkn_dict = dict(reader)
     return wkn_dict
@@ -45,6 +47,7 @@ def DfFromDKB(path):
     wkn_symbol = ReadDict()
     dataframe = pd.DataFrame()
     for f in files:
+        logging.debug("Importing " + f)
         fileframe = pd.read_csv(f,
             skiprows = 1,
             usecols = [0,1,2,3,4,5,6,7,9],
@@ -58,7 +61,7 @@ def DfFromDKB(path):
     dataframe.drop_duplicates(inplace=True)
     dataframe["Fee"] = (dataframe["Trans"]-dataframe["Amount"]*dataframe["Price"]).round(2)
     dataframe["Symbol"] = dataframe["WKN"].replace(wkn_symbol)
-    dataframe = dataframe.set_index("Execute")
+    dataframe = dataframe.set_index("Booking")
     dataframe = dataframe.sort_index()
     return dataframe
 
@@ -67,6 +70,7 @@ def DfFromComdirect(path):
     wkn_symbol = ReadDict()
     dataframe = pd.DataFrame()
     for f in files:
+        logging.debug("Importing " +f)
         amount = pd.read_csv(f,
             skiprows = 4,
             delimiter = ";",
@@ -94,16 +98,14 @@ def DfFromComdirect(path):
     dataframe = dataframe.assign(Portfolio="Altersvorsorge")
     dataframe["Fee"] = (dataframe["Trans"]-dataframe["Amount"]*dataframe["Price"]).round(2)
     dataframe["Symbol"] = dataframe["WKN"].replace(wkn_symbol)
-    dataframe = dataframe.set_index("Execute")
+    dataframe = dataframe.set_index("Booking")
     dataframe = dataframe.sort_index()
     return dataframe
 
-def LoadTransactions():
+def Rebuild_Transactions():
     input_dkb = DfFromDKB(constant.dkb_path)
     input_cd = DfFromComdirect(constant.dkb_path)
-    input_all = pd.concat([input_dkb,input_cd], sort=False).sort_index()
-    input_all["Execute"] = input_all.index
-    input_all.set_index("Booking", inplace=True)
+    input_all = pd.concat([input_dkb,input_cd]).sort_index()
     with open(constant.transactions_path, mode = "w+", newline="\n", encoding="UTF-8") as file:
             input_all.to_csv(file,
                 sep = ",",
@@ -114,15 +116,17 @@ def LoadTransactions():
                 header = True
             )
 
-Input_Trans = DfFromComdirect(constant.cd_path)
+def UpdateTransactions():
+    input_dkb = DfFromDKB(constant.dkb_path)
+    input_cd = DfFromComdirect(constant.cd_path)
+    input_all = pd.concat([input_dkb,input_cd]).sort_index()
 
-def UpdateTransactions(Input_Trans,Ref_Trans):
-    Portfolio = ReadTransactions(Ref_Trans)
+    Portfolio = ReadTransactions(constant.transactions_path)
     LatestTrans = Portfolio.index[-1]
-    New_Trans = Input_Trans[Input_Trans.index > LatestTrans ]
+    New_Trans = input_all[input_all.index > LatestTrans ]
     if New_Trans.shape[0] > 0:
-        Portfolio = pd.concat([Portfolio,New_Trans],ignore_index = True, sort = False)
-        with open(Ref_Trans, mode = "w+", newline="\n", encoding="UTF-8") as file:
+        Portfolio = pd.concat([Portfolio,New_Trans])
+        with open(constant.transactions_path, mode = "w+", newline="\n", encoding="UTF-8") as file:
             Portfolio.to_csv(file,
                 sep = ",",
                 quoting = csv.QUOTE_NONNUMERIC,
@@ -131,6 +135,6 @@ def UpdateTransactions(Input_Trans,Ref_Trans):
                 index = True,
                 header = True
             )
-            print("Updated ",New_Trans.shape[0]," transactions.")
+            logging.info("Updated " + str(New_Trans.shape[0]) + " transactions.")
     else:
-        print("Transactions are up to date.")
+        logging.info("Transactions are up to date.")
