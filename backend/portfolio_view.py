@@ -14,21 +14,20 @@ def ReadPortfolioView():
         raw = pd.read_csv(constant.portfolio_view_path, 
         header=[0,1,2],
         )
-        portfolio_view = pd.DataFrame(
+        pfview = pd.DataFrame(
         columns=pd.MultiIndex.from_tuples(raw.columns[1:], names = raw.columns[0]),
-#        index=pd.date_range(start=constant.start, end=constant.start)
         )
 
     else: 
-        portfolio_view = pd.read_csv(constant.portfolio_view_path, 
+        pfview = pd.read_csv(constant.portfolio_view_path, 
         header=[0,1,2], 
         index_col = 0,
         parse_dates = [0]
         )
-    return portfolio_view
+    return pfview
 
 def BuildNewColumns():
-    transactions = BankInput.ReadTransactions(constant.transactions_path)
+    transactions = BankInput.ReadTransactions()
     pf_list = transactions["Portfolio"].unique()
     properties = constant.pf_property_list
     
@@ -43,7 +42,7 @@ def BuildNewColumns():
     multiindex = pd.MultiIndex.from_tuples(pf_sym_list,names=["Portfolio","Symbol","Properties"])
     return multiindex
     
-def LoadPortfolioView():
+def Rebuild_PortfolioView():
     
     firstday = constant.start
     yesterday = backend.constant.yesterday
@@ -68,77 +67,50 @@ def LoadPortfolioView():
                header = True
     )
     logging.warning("Erased pfview.csv values and loaded a new header.")
+    UpdatePortfolioView()
 
 
 
 def UpdatePortfolioView():
-    portfolio_view = ReadPortfolioView()
-    transactions = BankInput.ReadTransactions(constant.transactions_path)
-    Update_Portfolio_View_Time(transactions,portfolio_view)
+    pfview = ReadPortfolioView()
+    transactions = BankInput.ReadTransactions()
+    Update_Portfolio_View_Time(transactions,pfview)
 
 ## 
 
-def Update_Portfolio_View_Time(transactions,portfolio_view):
-    if (portfolio_view.index.size == 0):
+def Update_Portfolio_View_Time(transactions,pfview):
+    if (pfview.index.size == 0):
         logging.warning("Found empty Portfolio View")
-        lastday = constant.start
+        old_pf_lastday = constant.start
     else:
-        lastday = portfolio_view.index[-1]
-    yesterday = backend.constant.yesterday
-
-    hist = backend.history.Read_History()
-    if (hist.index[-1] < yesterday): 
-        logging.warning("History is not up to date, cannot update portfolio")
-        return 
-
+        old_pf_lastday = pfview.index[-1]
     
-    if (lastday == yesterday):
+    history = backend.history.Read_History()
+    hist_last_day = history.index[-1]
+    yesterday= backend.constant.yesterday
+
+    if (hist_last_day < yesterday): 
+        logging.warning("History is not up to date, cannot update portfolio until yesterday. Will updated until last day of History.")
+        update_end_day = hist_last_day
+    else:
+        update_end_day = yesterday
+    ## Main Update loop    
+    if (old_pf_lastday == yesterday):
         logging.info("Portfolio View is up to date.")
     else:
-        portfolio_view_update = pd.DataFrame(
-        columns=portfolio_view.columns,
-        index=pd.date_range(start=lastday, end=yesterday, closed="right")
+        pfview_update = pd.DataFrame(
+        columns=pfview.columns,
+        index=pd.date_range(start=old_pf_lastday, end=update_end_day, closed="right")
         )
-        logging.info("Updating the days from " + lastday.strftime("%d.%m.%y") + " until " + yesterday.strftime("%d.%m.%y"))
-        for date in portfolio_view_update.index:
-            
-            transactions_to_date =  transactions.loc[constant.start:date]
-            portfolio_list_current = portfolio_view.columns.get_level_values(0).unique()
-            for pf in portfolio_list_current:
-                symbol_list_current = portfolio_view[pf].columns.get_level_values(0).unique()
-                for symbol in symbol_list_current:
-                    # print(symbol + " " + pf + " " + str(date))
-                    transactions_symbol_at_date = transactions_to_date.loc[(transactions_to_date["Portfolio"] == pf) & (transactions_to_date["Symbol"] == symbol)]
-                    amount_at_date = transactions_symbol_at_date["Amount"].sum()
-                    fees_at_date = transactions_symbol_at_date["Fee"].sum()
-                    trans_at_date = transactions_symbol_at_date["Trans"].sum()
-
-                    portfolio_view_update.loc[date,(pf,symbol,"Price")] = hist.loc[date,(symbol,"Close")]
-                    portfolio_view_update.loc[date,(pf,symbol,"Transactions")] = trans_at_date
-                    portfolio_view_update.loc[date,(pf,symbol,"Holdings")] = amount_at_date
-                    portfolio_view_update.loc[date,(pf,symbol,"Value")] = amount_at_date * hist.loc[date,(symbol,"Close")]
-                    portfolio_view_update.loc[date,(pf,symbol,"Fees")] = fees_at_date
-                    portfolio_view_update.loc[date,(pf,symbol,"Return(tot)")] =  amount_at_date * hist.loc[date,(symbol,"Close")] - trans_at_date  ## Fees are included in Amount / Transaction cost
-                    if (trans_at_date == 0):
-                        portfolio_view_update.loc[date,(pf,symbol,"Return(rel)")] = 0
-                    else:
-                        portfolio_view_update.loc[date,(pf,symbol,"Return(rel)")] =  (amount_at_date * hist.loc[date,(symbol,"Close")] - trans_at_date ) / trans_at_date ## Fees are included in Amount / Transaction cost
-                    
-                    if (amount_at_date == 0):
-                        portfolio_view_update.loc[date,(pf,symbol,"XIRR")] = 0
-                    else:
-                        xirr_list = ((-1)*transactions_symbol_at_date["Trans"]).reset_index().values.tolist()
-                        xirr_list.append([date,amount_at_date * hist.loc[date,(symbol,"Close")]])
-                        try: 
-                            xirr = FinancialFunc.xirr(xirr_list)
-                            if (xirr > 1.5):
-                                portfolio_view_update.loc[date,(pf,symbol,"XIRR")] = 0
-                            else: 
-                                portfolio_view_update.loc[date,(pf,symbol,"XIRR")] = xirr
-                        except RuntimeError:
-                            portfolio_view_update.loc[date,(pf,symbol,"XIRR")] = 0
-    
-        portfolio_view_new = pd.concat([portfolio_view,portfolio_view_update])
+        logging.info("Updating the days from " + old_pf_lastday.strftime("%d.%m.%y") + " until " + update_end_day.strftime("%d.%m.%y"))
+    ## Updating all values in pfview_update
+        for date in pfview_update.index:
+            print(date)
+            for portfolio in pfview.columns.get_level_values(0).unique():
+                for symbol in pfview[portfolio].columns.get_level_values(0).unique():
+                    pfview_update.update(Symbol_Property_Array(history,transactions, date,portfolio,symbol))
+    ## Patching together old pfview and pfview update + CSV export
+        portfolio_view_new = pd.concat([pfview,pfview_update])
         with open(constant.portfolio_view_path, mode = "w+", newline="\n", encoding="UTF-8") as file:
             portfolio_view_new.to_csv(file,
                sep = ",",
@@ -148,3 +120,72 @@ def Update_Portfolio_View_Time(transactions,portfolio_view):
                index = True,
                header = True
             )
+
+
+def Symbol_Property_Array(history,transactions,date,portfolio,symbol):
+
+    slicer = (transactions["Portfolio"] == portfolio) & (transactions["Symbol"] == symbol)
+
+    holdings = transactions[slicer].loc[constant.start:date,"Amount"].sum()
+    price = history.loc[date,(symbol,"Close")]
+    value = price * holdings
+    turnover = transactions[slicer].loc[constant.start:date,"Trans"].sum()
+    fees = transactions[slicer].loc[constant.start:date,"Fee"].sum()
+    ret_tot = value - turnover
+    ret_per = 0 if np.isnan(ret_tot/turnover)  else ret_tot/turnover
+    
+    xirr_list=transactions[slicer].loc[constant.start:date,"Trans"].mul(-1).reset_index().values.tolist()
+    if len(xirr_list) > 0: 
+        xirr_list.append([date,value])
+        try: 
+            xirr_return = FinancialFunc.xirr(xirr_list)
+            if (xirr_return > 1.5):
+                logging.warning("XIRR computed value > 1.5 at  " + date.strftime("%d.%m.%y") + " for " + portfolio + "/" + symbol)
+                xirr = 0
+            else: 
+                xirr = xirr_return
+        except RuntimeError:
+            logging.warning("XIRR encountered Runtime Error at " + date.strftime("%d.%m.%y") + " for " + portfolio + "/" + symbol)
+            xirr = 0
+    else: 
+        xirr = 0
+    iterables = [[portfolio], [symbol], constant.pf_property_list]
+    return_frame = pd.DataFrame(
+        index = [date],
+        columns = pd.MultiIndex.from_product(iterables,names=["Portfolio","Symbol","Properties"]),
+        data = np.array([[holdings],[price],[value],[turnover],[fees],[ret_tot],[ret_per],[xirr]]).T
+    )
+    return return_frame
+
+def Portfolio_Property_Array(date,portfolio,history,transactions):
+    slicer = (transactions["Portfolio"] == portfolio)
+    symbols = transactions[slicer]["Symbol"].unique()
+
+    value = sum([history.loc[date,(symbol,"Close")] *  transactions[slicer & (transactions["Symbol"] == symbol)].loc[constant.start:date,"Amount"].sum() for symbol in symbols])
+    turnover = transactions[slicer].loc[constant.start:date,"Trans"].sum()
+    fees = transactions[slicer].loc[constant.start:date,"Fee"].sum()
+    ret_tot = value - turnover
+    ret_per = 0 if np.isnan(ret_tot/turnover)  else ret_tot/turnover
+    
+    xirr_list=transactions[slicer].loc[constant.start:date,"Trans"].mul(-1).reset_index().values.tolist()
+    if len(xirr_list) > 0: 
+        xirr_list.append([date,value])
+        try: 
+            xirr_return = FinancialFunc.xirr(xirr_list)
+            if (xirr_return > 1.5):
+                logging.warning("XIRR computed value > 1.5 at  " + date.strftime("%d.%m.%y") + " for " + portfolio )
+                xirr = 0
+            else: 
+                xirr = xirr_return
+        except RuntimeError:
+            logging.warning("XIRR encountered Runtime Error at " + date.strftime("%d.%m.%y") + " for " + portfolio )
+            xirr = 0
+    else: 
+        xirr = 0
+    iterables = [[portfolio], ["Value", "Turnover", "Fees", "Return(tot)", "Return(rel)", "XIRR"]]
+    return_frame = pd.DataFrame(
+        index = [date],
+        columns = pd.MultiIndex.from_product(iterables,names=["Portfolio","Properties"]),
+        data = np.array([[value],[turnover],[fees],[ret_tot],[ret_per],[xirr]]).T
+    )
+    return return_frame

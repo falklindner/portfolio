@@ -21,4 +21,4 @@ portfolio_view_path = "data/pfview.csv"
 
 
 datefrmt = lambda x: datetime.datetime.strptime(x, "%d.%m.%Y")
-pf_property_list = ["Holdings", "Price", "Value", "Transactions", "Fees", "Return(tot)", "Return(rel)", "XIRR"]
+pf_property_list = ["Holdings", "Price", "Value", "Turnover", "Fees", "Return(tot)", "Return(rel)", "XIRR"]

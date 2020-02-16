@@ -6,8 +6,8 @@ import backend.constant as constant
 import glob
 
 
-def ReadTransactions(path):
-    portfolio = pd.read_csv(path, 
+def ReadTransactions():
+    portfolio = pd.read_csv(constant.transactions_path, 
         parse_dates=[0,1],
         index_col=0
     )
@@ -121,7 +121,7 @@ def UpdateTransactions():
     input_cd = DfFromComdirect(constant.cd_path)
     input_all = pd.concat([input_dkb,input_cd]).sort_index()
 
-    Portfolio = ReadTransactions(constant.transactions_path)
+    Portfolio = ReadTransactions()
     LatestTrans = Portfolio.index[-1]
     New_Trans = input_all[input_all.index > LatestTrans ]
     if New_Trans.shape[0] > 0:

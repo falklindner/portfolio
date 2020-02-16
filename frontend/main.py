@@ -27,14 +27,14 @@ PortfolioView.UpdatePortfolioView()
 
 
 
-transactions = BankInput.ReadTransactions(constant.transactions_path)
+transactions = BankInput.ReadTransactions()
 portfolio_view = PortfolioView.ReadPortfolioView()
 
 transactions.loc[transactions["Symbol"] == "AIR.PA"]
 portfolio_view.loc[:,("Airbus","AIR.PA","XIRR")]
 
 
-PortfolioPerformance.PortfolioToPP(constant.transactions_path, "data/export.csv")
+PortfolioPerformance.PortfolioToPP("data/export.csv")
 
 
 

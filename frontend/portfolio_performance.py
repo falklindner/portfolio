@@ -5,8 +5,8 @@ import BankInput
 import constant
 
 
-def PortfolioToPP (input_path,output_path):
-    input_portfolio = BankInput.ReadTransactions(input_path)
+def PortfolioToPP (output_path):
+    input_portfolio = BankInput.ReadTransactions()
     
     pp_headers = [
         'Symbol', 
