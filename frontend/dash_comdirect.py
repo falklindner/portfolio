@@ -1,6 +1,7 @@
 import logging
 
 import backend.bank_input
+import backend.portfolio_view
 import pandas as pd
 from dateutil.relativedelta import relativedelta
 
@@ -9,6 +10,7 @@ def df_comdirect():
     
     # Take only "Altersvorsorge" data, which is Comdirect
     transactions = backend.bank_input.ReadTransactions()
+    pfview = backend.portfolio_view.ReadPortfolioView()
     
     cd_view = pd.DataFrame(
         index = transactions.loc[transactions["Portfolio"] == "Altersvorsorge"].unique()
