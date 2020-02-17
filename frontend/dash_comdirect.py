@@ -1,16 +1,17 @@
 import logging
 
-import backend.portfolio_view as portfolio
+import backend.bank_input
 import pandas as pd
 from dateutil.relativedelta import relativedelta
 
 
 def df_comdirect():
-    pfview = portfolio.ReadPortfolioView()
+    
     # Take only "Altersvorsorge" data, which is Comdirect
-
+    transactions = backend.bank_input.ReadTransactions()
+    
     cd_view = pd.DataFrame(
-        index = pfview["Altersvorsorge"].columns.get_level_values(0).unique()
+        index = transactions.loc[transactions["Portfolio"] == "Altersvorsorge"].unique()
     )
 
     lastday = pfview.index[-1]

@@ -1,4 +1,5 @@
 import backend.portfolio_view 
+import backend.bank_input
 import pandas as pd
 import backend.constant as constant
 import backend.secrets as secrets
@@ -13,8 +14,9 @@ def Rebuild_History():
     if (pd.Timestamp.today() < pd.Timestamp.today().replace(hour = 20, minute = 0, second = 0)):
         logging.warning("Need to wait until 20:00") ## After 20:00 Yahoo Finance will store the EoD / Close price (that is sometimes not present the next day)
     else:    
-        # Setting up history dataframe with columns from Portfolio
-        symbol_list = backend.portfolio_view.ReadPortfolioView().columns.get_level_values(1).unique()
+        # Setting up history dataframe with columns from all transactions
+        symbol_list = backend.bank_input.ReadTransactions()["Symbol"].unique()
+
         properties = ["Close", "Volume", "Dividends"]
         hist_columns = pd.MultiIndex.from_product([symbol_list,properties], names=["Symbol", "Property"])
         hist = pd.DataFrame(
@@ -140,8 +142,8 @@ def Update_History():
         
         ## Creating the list of columns (stocks) for the history file (either by old hist.csv or by checking portfolio)
         if (hist.columns.size == 0):
-            logging.warning("Using Symbols from portfolio instead of hist.csv")
-            symbols = backend.portfolio_view.ReadPortfolioView().columns.get_level_values(1).unique()
+            logging.warning("Using Symbols from transactions instead of hist.csv")
+            symbols = backend.bank_input.ReadTransactions()["Symbol"].unique()
             properties = ["Close", "Volume", "Dividends"]
             hist_columns = pd.MultiIndex.from_product([symbols,properties], names=["Symbol", "Property"])
         else:
@@ -161,7 +163,7 @@ def Update_History():
             logging.debug("Updating the following days in History: "+ str(hist_update.index.strftime("%d.%m").values))
             
             symbol_list_string = ""
-            for symbol in hist_columns.get_level_values(0).unique():
+            for symbol in backend.bank_input.ReadTransactions()["Symbol"].unique():
                 symbol_list_string = str(symbol_list_string + symbol + " ")
             
             data_recent = yf.download(  

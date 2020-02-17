@@ -52,23 +52,6 @@ transactions.loc["Amount"].sum()
 
 
 
-
-test = pd.DataFrame(
-        columns=portfolio_view.columns,
-        index=pd.date_range(start=constant.start, end=yesterday, closed="right")
-        )
-
-portfolio_view.loc[:,(slice(None),slice(None),"Holdings")].columns.get_level_values(0).tolist()
-
-
-def rowName(row):
-    return row.name
-
-for pf,sym,prop in portfolio_view.columns:
-    if prop == "Holdings"
-    portfolio_view.loc[:,(slice(None),slice(None),prop)].apply()
-
-
 # portfolio_view.to_csv(portfolio_view_path)
 
 

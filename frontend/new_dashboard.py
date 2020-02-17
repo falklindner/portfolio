@@ -4,8 +4,7 @@ data = {"Value(Tot)": [str(int(value_last.round(0))) + "€"], "Gain(Tot)": [str
 df = pd.DataFrame.from_dict(data)
 
 
-pflist = pfview.columns.get_level_values(0).unique()
-pf = pflist[0]
+
 
 lastdate = pfview.index[-1]
 
