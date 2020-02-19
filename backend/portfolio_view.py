@@ -193,29 +193,3 @@ def Portfolio_Property_Array(date,portfolio,history,transactions):
         data = np.array([[value],[turnover],[fees],[ret_tot],[ret_per],[xirr]]).T
     )
     return return_frame
-
-
-
-
-# date = pd.Timestamp("2020-02-02")
-# pfview = ReadPortfolioView()
-# portfolio = "Altersvorsorge"
-# history = backend.history.Read_History()
-# transactions = backend.bank_input.ReadTransactions()
-
-# pfview
-# pd.concat([pfview,return_frame], axis=1)["Altersvorsorge"].columns
-# pfview["Altersvorsorge"].columns.get_level_values(0).unique()
-# pfview.loc[date]["Altersvorsorge"]
-# pfview_update.update(return_frame)
-# pfview.loc[:,("Altersvorsorge",slice(None),slice(None))].update(return_frame)
-
-# index = pd.DataFrame(columns=index)
-# for portfolio in index.columns.get_level_values(0).unique():
-#     for symbol in index[portfolio].columns.get_level_values(0).unique():
-#         if symbol.startswith("SUM_"):
-#             print(symbol + " is a sum")
-#         #pfview.loc[:,("Altersvorsorge",slice(None),slice(None))].update(return_frame)
-#         else:
-#         #pfview_update.update(Symbol_Property_Array(history,transactions, date,portfolio,symbol))
-#             print(symbol + " is a symbol")

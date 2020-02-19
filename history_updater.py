@@ -7,4 +7,3 @@ import backend.history
 logger.debug("Starting Program")
 backend.history.Update_History()
 logger.debug("Program finished")
-
