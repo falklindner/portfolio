@@ -31,11 +31,13 @@ def generate_table(dataframe, max_rows=10):
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 cd_view = dash_comdirect.df_comdirect().reset_index()
+pf_view = dash_comdirect.df_portfolio().reset_index()
 
 
 app.layout = html.Div(children=[
     html.H4(children='Comdirect View'),
-    generate_table(cd_view.round(2))
+    generate_table(cd_view.round(2)),
+    generate_table(pf_view.round(2))
 ])
 
 

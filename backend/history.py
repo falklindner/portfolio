@@ -178,12 +178,10 @@ def Update_History():
             threads = True,
             proxy = None
             )
-            hist_update = data_recent.loc[:,(slice(None),("Close","Volume","Dividends"))]
+            hist_update.update(data_recent.loc[:,(slice(None),("Close","Volume","Dividends"))])
             hist = hist.append(hist_update)
             hist.sort_index(axis=1, inplace=True)
-            if hist.index.size == hist.drop_duplicates().index.size:
-                hist.update(hist.loc[:,(slice(None),slice("Close"))].interpolate(method="linear")) # Linear interpolation for missing data in all "Close" columns 
-                hist.update(hist.loc[:,(slice(None),("Volume","Dividends"))].fillna(0))
-                hist.to_csv(constant.hist_path)
-            else:
-                logging.warning("No new data was given from Yahoo Finance.")
+            
+            hist.update(hist.loc[:,(slice(None),slice("Close"))].interpolate(method="linear")) # Linear interpolation for missing data in all "Close" columns 
+            hist.update(hist.loc[:,(slice(None),("Volume","Dividends"))].fillna(0))
+            hist.to_csv(constant.hist_path)

@@ -35,6 +35,7 @@ def BuildNewColumns():
     
     for pf in pf_list:
         pf_symbols = transactions["Symbol"].loc[transactions["Portfolio"] == pf].unique()
+        pf_symbols = np.append(pf_symbols,"SUM_"+pf)
         for symbol in pf_symbols:
             for prop in properties:
                 pf_sym_list.append((pf,symbol,prop))
@@ -105,10 +106,12 @@ def Update_Portfolio_View_Time(transactions,pfview):
         logging.info("Updating the days from " + old_pf_lastday.strftime("%d.%m.%y") + " until " + update_end_day.strftime("%d.%m.%y"))
     ## Updating all values in pfview_update
         for date in pfview_update.index:
-            print(date)
             for portfolio in pfview.columns.get_level_values(0).unique():
                 for symbol in pfview[portfolio].columns.get_level_values(0).unique():
-                    pfview_update.update(Symbol_Property_Array(history,transactions, date,portfolio,symbol))
+                    if symbol.startswith("SUM_"):
+                        pfview_update.update(Portfolio_Property_Array(date,portfolio,history,transactions))
+                    else:
+                        pfview_update.update(Symbol_Property_Array(history,transactions,date,portfolio,symbol))
     ## Patching together old pfview and pfview update + CSV export
         portfolio_view_new = pd.concat([pfview,pfview_update])
         with open(constant.portfolio_view_path, mode = "w+", newline="\n", encoding="UTF-8") as file:
@@ -157,6 +160,7 @@ def Symbol_Property_Array(history,transactions,date,portfolio,symbol):
     )
     return return_frame
 
+
 def Portfolio_Property_Array(date,portfolio,history,transactions):
     slicer = (transactions["Portfolio"] == portfolio)
     symbols = transactions[slicer]["Symbol"].unique()
@@ -182,10 +186,36 @@ def Portfolio_Property_Array(date,portfolio,history,transactions):
             xirr = 0
     else: 
         xirr = 0
-    iterables = [[portfolio], ["Value", "Turnover", "Fees", "Return(tot)", "Return(rel)", "XIRR"]]
+    iterables = [[portfolio],["SUM_"+portfolio], ["Value", "Turnover", "Fees", "Return(tot)", "Return(rel)", "XIRR"]]
     return_frame = pd.DataFrame(
         index = [date],
-        columns = pd.MultiIndex.from_product(iterables,names=["Portfolio","Properties"]),
+        columns = pd.MultiIndex.from_product(iterables,names=["Portfolio","Symbol","Properties"]),
         data = np.array([[value],[turnover],[fees],[ret_tot],[ret_per],[xirr]]).T
     )
     return return_frame
+
+
+
+
+# date = pd.Timestamp("2020-02-02")
+# pfview = ReadPortfolioView()
+# portfolio = "Altersvorsorge"
+# history = backend.history.Read_History()
+# transactions = backend.bank_input.ReadTransactions()
+
+# pfview
+# pd.concat([pfview,return_frame], axis=1)["Altersvorsorge"].columns
+# pfview["Altersvorsorge"].columns.get_level_values(0).unique()
+# pfview.loc[date]["Altersvorsorge"]
+# pfview_update.update(return_frame)
+# pfview.loc[:,("Altersvorsorge",slice(None),slice(None))].update(return_frame)
+
+# index = pd.DataFrame(columns=index)
+# for portfolio in index.columns.get_level_values(0).unique():
+#     for symbol in index[portfolio].columns.get_level_values(0).unique():
+#         if symbol.startswith("SUM_"):
+#             print(symbol + " is a sum")
+#         #pfview.loc[:,("Altersvorsorge",slice(None),slice(None))].update(return_frame)
+#         else:
+#         #pfview_update.update(Symbol_Property_Array(history,transactions, date,portfolio,symbol))
+#             print(symbol + " is a symbol")
