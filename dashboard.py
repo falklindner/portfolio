@@ -3,6 +3,10 @@ import dash_table
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objects as go
+from dash.dependencies import Input, Output
+import dash_auth
+import backend.secrets as secrets
+
 import pandas as pd
 import backend.portfolio_view as PortfolioView
 import backend.constant as constant
@@ -101,7 +105,7 @@ return_fig = go.Figure(data=return_data, layout=layout)
 
 
 
-app.layout = html.Div(children=[
+tab1_content = html.Div(children=[
     html.Div(children=[
         html.H4(children='Comdirect View'),
         generate_table(cd_view.round(2))
@@ -113,11 +117,40 @@ app.layout = html.Div(children=[
         ],
         style={'width': '49%', 'display': 'inline-block','margin-right': 10}),
     html.H4(children="Time Series"),
+    html.H5(children="XIRR Chart"),
     dcc.Graph(figure=xirr_fig),
+    html.H5(children="Total Returns Chart"),
     dcc.Graph(figure=return_fig)
 ])
 
+tab2_content = html.Div(children=html.H4("Work in progress"))
 
+VALID_USERNAME_PASSWORD_PAIRS = {
+    secrets.username : secrets.password
+}
+
+auth = dash_auth.BasicAuth(
+    app,
+    VALID_USERNAME_PASSWORD_PAIRS
+)
+
+app.layout = html.Div([
+    html.H1('Dash Tabs'),
+    dcc.Tabs(id="tabs-example", value='tab-1', children=[
+        dcc.Tab(label='Tab One', value='tab-1'),
+        dcc.Tab(label='Tab Two', value='tab-2'),
+    ]),
+    html.Div(id='tabs-content-example')
+])
+
+@app.callback(Output('tabs-content-example', 'children'),
+              [Input('tabs-example', 'value')])
+
+def render_content(tab):
+    if tab == 'tab-1':
+        return tab1_content
+    elif tab == 'tab-2':
+        return tab2_content
 
 
 if __name__ == '__main__':
