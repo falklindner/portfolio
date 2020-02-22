@@ -126,9 +126,6 @@ def Read_History():
 ## Construct data frame with historical values of all symbols in portfolio
 
 def Update_History(): 
-    if (pd.Timestamp.today() < pd.Timestamp.today().replace(hour = 20, minute = 0, second = 0)):
-        logging.warning("Need to wait until 20:00") ## After 20:00 Yahoo Finance will store the EoD / Close price (that is sometimes not present the next day)
-    else: 
         hist = Read_History()
 
         ## Determining the time period for history file update
@@ -153,14 +150,6 @@ def Update_History():
         if (lastday == today):
             logging.debug("History is up to date.")
         else:
-            hist_update = pd.DataFrame(
-            columns=hist_columns,
-            index=pd.date_range(start=lastday, end=today, closed="right"),
-            dtype="float64"
-            )
-
-            ## Update loop
-            logging.debug("Updating the following days in History: "+ str(hist_update.index.strftime("%d.%m").values))
             
             symbol_list_string = ""
             for symbol in backend.bank_input.ReadTransactions()["Symbol"].unique():
@@ -178,10 +167,20 @@ def Update_History():
             threads = True,
             proxy = None
             )
-            hist_update.update(data_recent.loc[:,(slice(None),("Close","Volume","Dividends"))])
+
+            hist_update = pd.DataFrame(
+            columns=hist_columns,
+            index=data_recent.index,
+            data = data_recent.loc[:,(slice(None),("Close","Volume","Dividends"))],
+            dtype="float64"
+            )
+
+            ## Update loop
+            logging.debug("Updating the following days in History: "+ str(hist_update.index.strftime("%d.%m").values))
+
             hist = hist.append(hist_update)
             hist.sort_index(axis=1, inplace=True)
-            if hist.index.size == hist.reset_index().drop_duplicates().index.size:
+            if hist.index.size == hist.index.drop_duplicates().size:
                 hist.update(hist.loc[:,(slice(None),slice("Close"))].interpolate(method="linear")) # Linear interpolation for missing data in all "Close" columns 
                 hist.update(hist.loc[:,(slice(None),("Volume","Dividends"))].fillna(0))
                 hist.to_csv(constant.hist_path)
