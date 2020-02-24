@@ -15,7 +15,9 @@ Features so far:
 
 <portfolio path>
 │   README.md
-│   file001.txt    
+│   history_updater.py                      -> Python script keeping the history csv up-to-date
+|   transaction_updater.py                  -> Python script keeping the transaction csv up-to-date
+|   pf_updater.py                           -> Python script keeping the portfolio csv up-to-date
 │
 └───data
 │   │   dict.csv                            -> Dictionary between WKN and Symbol
