@@ -5,15 +5,9 @@ import dash_html_components as html
 import plotly.graph_objects as go
 from dash.dependencies import Input, Output
 import dash_auth
-import backend.secrets as secrets
+
 
 import pandas as pd
-import backend.portfolio_view as PortfolioView
-import backend.constant as constant
-import backend.bank_input as BankInput
-import backend.history as History
-import backend.financial_func as FinancialFunc
-
 
 import frontend.dash_portfolio as dash_portfolio
 
@@ -26,14 +20,6 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 tab2_content = html.Div(children=html.H4("Work in progress"))
 
-VALID_USERNAME_PASSWORD_PAIRS = {
-    secrets.username : secrets.password
-}
-
-auth = dash_auth.BasicAuth(
-    app,
-    VALID_USERNAME_PASSWORD_PAIRS
-)
 
 app.layout = html.Div([
     html.H1('Dash Tabs'),

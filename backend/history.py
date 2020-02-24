@@ -158,7 +158,7 @@ def Update_History():
             data_recent = yf.download(  
             tickers = symbol_list_string,
             start = lastday + pd.DateOffset(1),
-            end = pd.Timestamp.today(),
+            end = pd.Timestamp.today().replace(hour=23, minute=0, second=0,microsecond =0),
             interval = "1d",
             group_by = 'ticker',
             actions= True,
