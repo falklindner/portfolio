@@ -34,9 +34,10 @@ Features so far:
 <p> Put input files in data/inputs/ </p>
 
 ## Steps for installation 
-Install CRON job for history_updater after market closure, e.g.
+Install CRON job for history_updater and pf_updater after market closure, e.g.
 
     (crontab -l && echo "00  22   * * *  cd <portfolio path> && /usr/bin/python3 ./history_updater.py") | crontab -
+    (crontab -l && echo "05  22   * * *  cd <portfolio path> && /usr/bin/python3 ./pf_updater.py") | crontab -
 
 <p> Install transcations updated with an inotify scripts (needs inotify-tools) </p>
     
