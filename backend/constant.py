@@ -3,6 +3,7 @@ import datetime
 
 start = pd.Timestamp(year = 2016, month = 1, day = 18)
 yesterday = (pd.Timestamp.today() - pd.DateOffset(1)).replace(hour=23, minute=0, second=0,microsecond =0)
+today_market_close = pd.Timestamp.today().replace(hour=22, minute=0, second=0,microsecond =0)
 
 xetra = "data/t7-xetr-allTradableInstruments.csv"
 
