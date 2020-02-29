@@ -149,7 +149,7 @@ def Update_History():
         ## Main update loop. Creating Dataframe to append to old history
         today = pd.Timestamp.today()
         if (today < constant.today_market_close):
-            update_index = pd.date_range(start=lastday+pd.DateOffset(1), end=today, closed="right")
+            update_index = pd.date_range(start=lastday+pd.DateOffset(1), end=today.replace(hour=0, minute=0, second=0,microsecond =0), closed="left")
             logging.debug("Too early for history change of today, updating only until " + (today-pd.DateOffset(1)).strftime("%d.%m"))
         else:
             update_index = pd.date_range(start=lastday+pd.DateOffset(1), end=today)
@@ -162,8 +162,8 @@ def Update_History():
             
             data_recent = yf.download(  
             tickers = symbol_list_string,
-            start = lastday,
-            end = today,
+            start = update_index[0],
+            end = update_index[-1],
             interval = "1d",
             group_by = 'ticker',
             actions= True,
