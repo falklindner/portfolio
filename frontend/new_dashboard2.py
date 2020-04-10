@@ -11,16 +11,18 @@ import dash_core_components as dcc
 
 import matplotlib.pyplot as plt
 
-def generate_symbol_analysis():
+
+
+def generate_macd_analysis(no_one,no_two,no_three):
         hist = history.Read_History()
         symbol_list = hist.columns.get_level_values(0).unique()
-        analysis_cols = ["Signal","MACD"]
+        analysis_cols = ["MACD", "MACD Signal","MACD Hist"]
         update_df = pd.DataFrame(index = hist.index, columns=pd.MultiIndex.from_product([hist.columns.levels[0],analysis_cols]))
         def ewm(dataframe, days):
             return dataframe.ewm(span=days,adjust = False).mean()
         
-        update_df.loc[:,("AIR.PA","MACD")].update(ewm(hist.loc[:,("AIR.PA","Close")],12)-ewm(hist.loc[:,("AIR.PA","Close")],26))
-        update_df.loc[:,("AIR.PA","Signal")].update(ewm(update_df.loc[:,("AIR.PA","MACD")],9))
+        update_df.loc[:,("AIR.PA","MACD")].update(ewm(hist.loc[:,("AIR.PA","Close")],no_one)-ewm(hist.loc[:,("AIR.PA","Close")],no_two))
+        update_df.loc[:,("AIR.PA","MACD Signal")].update(ewm(update_df.loc[:,("AIR.PA","MACD")],no_three))
         
 
         plt.plot(update_df.index, update_df.loc[:,("AIR.PA","MACD")], label="MACD", color = "black" )
@@ -53,21 +55,37 @@ def generate_symbol_analysis():
 
 
 
-
-
-
-
-
-pfview = portfolio_view.ReadPortfolioView()
-lastday = pfview.index[-1]
-
-transactions = BankInput.ReadTransactions()
-
-xirr_list = ((-1)*transactions["Trans"].loc[(transactions["Symbol"] == "LYPG.DE") & (transactions["Portfolio"] == "Altersvorsorge")])
-xirr_list[lastday] = pfview[("Altersvorsorge","LYPG.DE","Value")].loc[lastday]
-xirr_list.to_csv("data/x010_xirr.csv", sep=";", decimal=",")
-
-
-pfview.loc[:,("Rücklage","Total", "Value")] = pfview.loc[:,("Rücklage", slice(None),"Value")].sum(axis=1)
-
-pfview.loc[:,("Rücklage", slice(None),"Value")]
+def get_table_layout():
+        return dict(
+        height = 800,
+        yaxis=dict(
+        range = [0,0.6]
+        ),
+        xaxis=dict(
+            rangeselector=dict(
+                buttons=list([
+                    dict(count=1,
+                        label='1m',
+                        step='month',
+                        stepmode='backward'),
+                    dict(count=6,
+                        label='6m',
+                        step='month',
+                        stepmode='backward'),
+                    dict(count=1,
+                        label='YTD',
+                        step='year',
+                        stepmode='todate'),
+                    dict(count=1,
+                        label='1y',
+                        step='year',
+                        stepmode='backward'),
+                    dict(step='all')
+                ])
+            ),
+            rangeslider=dict(
+                visible = True
+            ),
+            type='date'
+        )
+    )

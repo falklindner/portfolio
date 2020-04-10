@@ -17,7 +17,7 @@ def Rebuild_History():
         # Setting up history dataframe with columns from all transactions
         symbol_list = backend.bank_input.ReadTransactions()["Symbol"].unique()
 
-        properties = ["Close", "Volume", "Dividends"]
+        properties = ["Open","High", "Low", "Close", "Volume", "Dividends"]
         hist_columns = pd.MultiIndex.from_product([symbol_list,properties], names=["Symbol", "Property"])
         hist = pd.DataFrame(
             columns=hist_columns,
@@ -94,16 +94,16 @@ def Rebuild_History():
             proxy = None
         )
         
-        hist_legacy = data_legacy.loc[constant.start:,(slice(None),("Close","Volume","Dividends"))]
-        hist_recent = data_recent.loc[:,(slice(None),("Close","Volume","Dividends"))]
+        hist_legacy = data_legacy.loc[constant.start:,(slice(None),("Open","High","Low","Close","Volume","Dividends"))]
+        hist_recent = data_recent.loc[:,(slice(None),("Open","High","Low","Close","Volume","Dividends"))]
         hist.update(hist_legacy)
         hist.update(hist_recent)
           
 
         # Updating empty History dataframe with harmonized data
         hist.sort_index(axis=1, inplace=True)
-        hist.update(hist.loc[:,(slice(None),slice("Close"))].interpolate(method="linear")) # Linear interpolation for missing data in all "Close" columns 
-        hist.update(hist.loc[:,(slice(None),("Volume","Dividends"))].fillna(0))
+        #hist.update(hist.loc[:,(slice(None),slice("Close"))].interpolate(method="linear")) # Linear interpolation for missing data in all "Close" columns 
+        #hist.update(hist.loc[:,(slice(None),("Volume","Dividends"))].fillna(0))
         hist.to_csv(constant.hist_path)
 
 
@@ -177,7 +177,7 @@ def Update_History():
                 hist_update = pd.DataFrame(
                 columns=hist_columns,
                 index=update_index,
-                data = data_recent.loc[:,(slice(None),("Close","Volume","Dividends"))],
+                data = data_recent.loc[:,(slice(None),("Open","High","Low","Close","Volume","Dividends"))],
                 dtype="float64"
                 )
             else:

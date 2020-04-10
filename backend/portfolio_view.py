@@ -53,7 +53,7 @@ def Rebuild_PortfolioView():
     try:
         os.rename(constant.portfolio_view_path,constant.portfolio_view_path + "-old.csv")
     except FileNotFoundError:
-        logging.Warning("Portfolio View File not found. Creating a new one")
+        logging.warning("Portfolio View File not found. Creating a new one")
     except FileExistsError:
         logging.warning("Overwriting existing backup.")
         os.replace(constant.portfolio_view_path,constant.portfolio_view_path + "-old.csv")
@@ -86,7 +86,8 @@ def Update_Portfolio_View_Time(transactions,pfview):
     else:
         old_pf_lastday = pfview.index[-1]
     
-    history = backend.history.Read_History()
+    history = backend.history.Read_History().interpolate()
+    
     hist_last_day = history.index[-1]
     yesterday= backend.constant.yesterday
 
